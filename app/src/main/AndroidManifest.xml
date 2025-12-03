@@ -16,11 +16,21 @@
             android:name=".EditActivity"
             android:exported="false" />
         <activity
-            android:name=".AddActivity"
+            android:name=".AddTransactionActivity"
             android:exported="false" />
         <activity
             android:name=".OverviewFragment"
-            android:exported="false" />
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+        <activity
+            android:name=".BudgetFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+        <activity
+            android:name=".ExpensesFragment"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
 
         <activity
             android:name=".LoginActivity"

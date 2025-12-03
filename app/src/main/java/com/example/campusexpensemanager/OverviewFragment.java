@@ -6,16 +6,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.campusexpensemanager.R;
-import com.example.campusexpensemanager.TransactionAdapter;
-import com.example.campusexpensemanager.DatabaseHelper;
-import com.example.campusexpensemanager.Transaction;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,35 +26,29 @@ public class OverviewFragment extends Fragment {
 
         db = new DatabaseHelper(getContext());
 
-        // 1. Ánh xạ View
         txtExpense = view.findViewById(R.id.txtOverviewExpense);
         txtBudget = view.findViewById(R.id.txtOverviewBudget);
         txtRemaining = view.findViewById(R.id.txtOverviewRemaining);
         txtEmptyHistory = view.findViewById(R.id.txtEmptyHistory);
         recyclerView = view.findViewById(R.id.recyclerOverviewHistory);
 
-        // 2. Cài đặt RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // QUAN TRỌNG: Truyền null vào listener để tắt tính năng click
+        // Màn hình Overview chỉ xem, không click -> truyền listener là null
         adapter = new TransactionAdapter(new ArrayList<>(), null);
         recyclerView.setAdapter(adapter);
 
         loadOverviewData();
-
         return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadOverviewData(); // Load lại dữ liệu khi quay lại tab này
+        loadOverviewData();
     }
 
     private void loadOverviewData() {
-        if (db == null) return;
-
-        // --- PHẦN 1: THỐNG KÊ (STATS) ---
         double totalExpense = db.getTotalExpense();
         double totalBudget = db.getTotalBudget();
         double remaining = totalBudget - totalExpense;
@@ -71,25 +58,20 @@ public class OverviewFragment extends Fragment {
         if (txtBudget != null) txtBudget.setText(df.format(totalBudget));
         if (txtRemaining != null) {
             txtRemaining.setText(df.format(remaining));
-            // Đổi màu: Đỏ nếu âm, Xanh nếu dương
-            txtRemaining.setTextColor(remaining < 0 ? Color.parseColor("#EF4444") : Color.parseColor("#10B981"));
+            txtRemaining.setTextColor(remaining < 0 ? Color.RED : Color.parseColor("#10B981"));
         }
 
-        // --- PHẦN 2: LỊCH SỬ (LIST) ---
         List<Transaction> list = db.getAllTransactions();
-
-        // Nếu muốn chỉ hiện 5 giao dịch gần nhất cho gọn (Optional):
-        // if (list.size() > 5) list = list.subList(0, 5);
-
         adapter.updateData(list);
 
-        // Ẩn hiện thông báo nếu danh sách trống
-        if (list.isEmpty()) {
-            txtEmptyHistory.setVisibility(View.VISIBLE);
-            recyclerView.setVisibility(View.GONE);
-        } else {
-            txtEmptyHistory.setVisibility(View.GONE);
-            recyclerView.setVisibility(View.VISIBLE);
+        if (txtEmptyHistory != null && recyclerView != null) {
+            if (list.isEmpty()) {
+                txtEmptyHistory.setVisibility(View.VISIBLE);
+                recyclerView.setVisibility(View.GONE);
+            } else {
+                txtEmptyHistory.setVisibility(View.GONE);
+                recyclerView.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

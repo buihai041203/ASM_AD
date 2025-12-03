@@ -4,12 +4,13 @@ import java.io.Serializable;
 
 public class Transaction implements Serializable {
     private int id;
-    private String note;        // Tên chi phí (VD: Mua rau)
+    private String note;        // Tên khoản chi (VD: Mua cơm)
     private double amount;      // Số tiền
     private String date;        // Ngày
     private String category;    // Danh mục
-    private String description; // Mô tả chi tiết
+    private String description; // Mô tả thêm
 
+    // Constructor đầy đủ dùng khi đọc từ DB
     public Transaction(int id, String note, double amount, String date, String category, String description) {
         this.id = id;
         this.note = note;
@@ -19,7 +20,7 @@ public class Transaction implements Serializable {
         this.description = description;
     }
 
-    public Transaction(String reason, String currentTime, double amount) {
+    public Transaction(String salary, String note, int amount) {
 
     }
 
@@ -30,12 +31,4 @@ public class Transaction implements Serializable {
     public String getDate() { return date; }
     public String getCategory() { return category; }
     public String getDescription() { return description; }
-
-    public Object getTitle() {
-                    return null;
-    }
-
-    public int getTime() {
-        return 0;
-    }
 }
