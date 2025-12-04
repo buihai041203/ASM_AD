@@ -43,7 +43,7 @@ public class EditActivity extends AppCompatActivity {
             Transaction oldTransaction = AppData.getInstance().getTransactionList().get(position);
 
             // Điền vào ô trống
-            edtReason.setText(oldTransaction.getTitle());
+            edtReason.setText       (oldTransaction.getTitle());
             // Ép kiểu int để hiển thị đẹp (bỏ số .0)
             edtCost.setText(String.valueOf((int) oldTransaction.getAmount()));
 

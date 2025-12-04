@@ -8,12 +8,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TransactionViewHolder> {
 
     private List<Transaction> transactionList;
     private OnItemClickListener listener; // Biến lắng nghe sự kiện
+
+    public void updateData(List<Transaction> list) {
+
+    }
 
     // 1. Tạo Interface (Cái cổng giao tiếp)
     public interface OnItemClickListener {
@@ -25,7 +30,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         this.listener = listener;
     }
 
-    public TransactionAdapter(List<Transaction> transactionList) {
+    public TransactionAdapter(ArrayList<Transaction> list, List<Transaction> transactionList) {
         this.transactionList = transactionList;
     }
 

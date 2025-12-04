@@ -1,27 +1,41 @@
 package com.example.campusexpensemanager;
 
-public class Transaction {
-    private String title;   // Ví dụ: "Tiền lương"
-    private String time;    // Ví dụ: "28/11/2025..."
-    private double amount;  // Ví dụ: 5000000
+import java.io.Serializable;
 
-    // Constructor (Hàm khởi tạo để AppData dùng được lệnh new Transaction(...))
-    public Transaction(String title, String time, double amount) {
-        this.title = title;
-        this.time = time;
+public class Transaction implements Serializable {
+    private int id;
+    private String note;        // Tên chi phí (VD: Mua rau)
+    private double amount;      // Số tiền
+    private String date;        // Ngày
+    private String category;    // Danh mục
+    private String description; // Mô tả chi tiết
+
+    public Transaction(int id, String note, double amount, String date, String category, String description) {
+        this.id = id;
+        this.note = note;
         this.amount = amount;
+        this.date = date;
+        this.category = category;
+        this.description = description;
     }
 
-    // Các hàm Getter để lấy dữ liệu ra hiển thị
-    public String getTitle() {
-        return title;
+    public Transaction(String reason, String currentTime, double amount) {
+
     }
 
-    public String getTime() {
-        return time;
+    // Getters
+    public int getId() { return id; }
+    public String getNote() { return note; }
+    public double getAmount() { return amount; }
+    public String getDate() { return date; }
+    public String getCategory() { return category; }
+    public String getDescription() { return description; }
+
+    public Object getTitle() {
+                    return null;
     }
 
-    public double getAmount() {
-        return amount;
+    public int getTime() {
+        return 0;
     }
 }

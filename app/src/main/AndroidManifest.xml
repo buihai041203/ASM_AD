@@ -19,7 +19,7 @@
             android:name=".AddActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity2"
+            android:name=".OverviewFragment"
             android:exported="false" />
 
         <activity
