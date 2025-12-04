@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         textName.setText("Hello: Datbells");
 
         // Cài đặt RecyclerView
-        adapter = new TransactionAdapter(AppData.getInstance().getTransactionList());
+        adapter = new TransactionAdapter(new ArrayList<>(), AppData.getInstance().getTransactionList());
         rvTransactions.setLayoutManager(new LinearLayoutManager(this));
         rvTransactions.setAdapter(adapter);
 

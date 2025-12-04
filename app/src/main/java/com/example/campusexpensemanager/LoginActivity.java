@@ -1,61 +1,57 @@
 package com.example.campusexpensemanager;
 
+import android.content.Intent;
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.Intent; // Cần import Intent
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
-// Đổi từ 'class' thành 'public class' để đảm bảo Activity được truy cập và khai báo đúng
 public class LoginActivity extends AppCompatActivity {
 
-    // Khai báo các đối tượng
-    EditText edtUsername, edtPassword, edtEmail, edtPhone;
+    EditText edtUsername, edtPassword;
     Button btnLogin;
+    TextView txtRegisterLink;
+
+    DatabaseHelper_a db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Đảm bảo R.layout.activity_login đã được giải quyết (không còn lỗi)
         setContentView(R.layout.activity_login);
 
-        // 1. Ánh xạ (tìm) các thành phần từ XML bằng ID
-        // Các ID này phải khớp với activity_login.xml
+        db = new DatabaseHelper_a(this);
+
+        // Khởi tạo các thành phần UI
         edtUsername = findViewById(R.id.edtUsername);
         edtPassword = findViewById(R.id.edtPassword);
-        edtEmail = findViewById(R.id.edtEmail);
-        edtPhone = findViewById(R.id.edtPhone);
         btnLogin = findViewById(R.id.btnLogin);
+        txtRegisterLink = findViewById(R.id.txtRegisterLink);
 
-        // 2. Thiết lập lắng nghe sự kiện khi bấm nút LOGIN
-        // Dùng Lambda expression (tối ưu hơn View.OnClickListener)
+        // Xử lý nút Đăng Nhập
         btnLogin.setOnClickListener(v -> {
-            // Lấy dữ liệu người dùng nhập và cắt khoảng trắng thừa
             String username = edtUsername.getText().toString().trim();
             String password = edtPassword.getText().toString().trim();
 
-            // Kiểm tra điều kiện đăng nhập
-            if (!username.isEmpty() && !password.isEmpty()) {
-
-                // --- PHẦN CODE CHUYỂN MÀN HÌNH ---
-                Toast.makeText(LoginActivity.this,
-                        "Đăng nhập thành công! Chuyển đến trang chính.",
-                        Toast.LENGTH_SHORT).show();
-
-                // Tạo Intent để chuyển sang MainActivity
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
-
-                // Kết thúc màn hình Login để không thể bấm nút Back quay lại
-                finish();
-                // ---------------------------------
+            // Kiểm tra thông tin nhập vào
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please enter all details!", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(LoginActivity.this,
-                        "Vui lòng nhập đầy đủ Tên người dùng và Mật khẩu.",
-                        Toast.LENGTH_SHORT).show();
+                // Xác thực người dùng
+                if (db.validateUser(username, password)) {
+                    Toast.makeText(this, "Login successful!", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish(); // Ngăn không cho quay lại màn hình đăng nhập
+                } else {
+                    Toast.makeText(this, "Invalid username or password.", Toast.LENGTH_SHORT).show();
+                }
             }
+        });
+
+        // Xử lý liên kết Đăng Ký
+        txtRegisterLink.setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
     }
 }
