@@ -1,132 +1,113 @@
 package com.example.campusexpensemanager;
 
-import android.content.DialogInterface;
-import android.graphics.Color;
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.Calendar;
 
 public class EditActivity extends AppCompatActivity {
 
-    private EditText edtReason, edtCost, edtNote;
+    private EditText edtReason, edtCost, edtDate, edtNote; // Lưu ý ID ánh xạ bên dưới
+    private Spinner spinnerCategory;
     private Button btnUpdate, btnDelete, btnCancel;
-    private int position; // Vị trí dòng cần sửa
+    private Transaction currentTransaction;
+    private DatabaseHelper db;
+    private ArrayAdapter<String> spinnerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit);
+        setContentView(R.layout.activity_edit); // File layout activity_edit.xml
 
-        // 1. Ánh xạ (Đã khớp với ID trong activity_edit.xml)
+        db = new DatabaseHelper(this);
+
+        // 1. Ánh xạ (Phải khớp ID trong XML activity_edit)
+        // Nếu bạn dùng lại layout cũ thì sửa ID cho khớp code hoặc sửa code khớp ID
         edtReason = findViewById(R.id.edtReasonEdit);
         edtCost = findViewById(R.id.edtCostEdit);
         edtNote = findViewById(R.id.edtNoteEdit);
+        edtDate = findViewById(R.id.edtDate); // ID ngày
+        spinnerCategory = findViewById(R.id.spinnerCategory);
+
         btnUpdate = findViewById(R.id.btnUpdate);
         btnDelete = findViewById(R.id.btnDelete);
         btnCancel = findViewById(R.id.btnCancel);
 
-        // 2. Nhận dữ liệu từ Main gửi sang
-        position = getIntent().getIntExtra("position", -1);
+        // 2. Setup Spinner
+        String[] categories = {"Tiền thuê nhà", "Ăn uống", "Đi lại", "Giải trí", "Giáo dục", "Y tế", "Khác"};
+        spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
+        spinnerCategory.setAdapter(spinnerAdapter);
 
-        if (position != -1) {
-            // Lấy dữ liệu cũ từ kho
-            Transaction oldTransaction = AppData.getInstance().getTransactionList().get(position);
-
-            // Điền vào ô trống
-            edtReason.setText       (oldTransaction.getTitle());
-            // Ép kiểu int để hiển thị đẹp (bỏ số .0)
-            edtCost.setText(String.valueOf((int) oldTransaction.getAmount()));
-
-            // Nếu bạn có lưu Note thì set vào đây (Ví dụ: edtNote.setText(oldTransaction.getNote());)
+        // 3. Nhận dữ liệu
+        if (getIntent().hasExtra("transaction_data")) {
+            currentTransaction = (Transaction) getIntent().getSerializableExtra("transaction_data");
+            loadDataToViews();
         }
 
-        // 3. Logic đổi màu tiền (Đỏ/Xanh)
-        edtCost.addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().contains("-")) {
-                    edtCost.setTextColor(Color.RED);
-                } else {
-                    edtCost.setTextColor(Color.parseColor("#43A047")); // Green
-                }
-            }
-            public void afterTextChanged(Editable s) {}
-        });
-
-        // 4. Sự kiện nút SAVE CHANGES (Lưu sửa đổi)
-        btnUpdate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                saveChanges();
-            }
-        });
-
-        // 5. Sự kiện nút DELETE (Xóa)
-        btnDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                confirmDelete();
-            }
-        });
-
-        // 6. Sự kiện nút CANCEL (Hủy)
+        // 4. Sự kiện
+        edtDate.setOnClickListener(v -> showDatePicker());
+        btnUpdate.setOnClickListener(v -> updateData());
+        btnDelete.setOnClickListener(v -> deleteData());
         btnCancel.setOnClickListener(v -> finish());
     }
 
-    private void saveChanges() {
-        String reason = edtReason.getText().toString().trim();
-        String costString = edtCost.getText().toString().trim();
-        // String note = edtNote.getText().toString().trim();
-
-        if (reason.isEmpty() || costString.isEmpty()) {
-            Toast.makeText(this, "Fields cannot be empty!", Toast.LENGTH_SHORT).show();
-            return;
+    private void loadDataToViews() {
+        edtReason.setText(currentTransaction.getNote());
+        edtCost.setText(String.valueOf((long)currentTransaction.getAmount()));
+        edtDate.setText(currentTransaction.getDate());
+        if(currentTransaction.getDescription() != null) {
+            edtNote.setText(currentTransaction.getDescription());
         }
 
-        try {
-            double amount = Double.parseDouble(costString);
-
-            // Cập nhật thời gian sửa đổi
-            String updateTime = new SimpleDateFormat("dd/MM/yyyy - HH:mm", Locale.getDefault()).format(new Date());
-
-            // Tạo giao dịch mới đè lên cái cũ
-            Transaction updatedTransaction = new Transaction(reason, updateTime, amount);
-
-            // GỌI APPDATA ĐỂ CẬP NHẬT
-            AppData.getInstance().updateTransaction(position, updatedTransaction);
-
-            Toast.makeText(this, "Update successful!", Toast.LENGTH_SHORT).show();
-            finish(); // Quay về Main
-
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Invalid amount format!", Toast.LENGTH_SHORT).show();
-        }
+        // Chọn đúng danh mục cũ
+        int pos = spinnerAdapter.getPosition(currentTransaction.getCategory());
+        spinnerCategory.setSelection(pos);
     }
 
-    private void confirmDelete() {
+    private void updateData() {
+        String note = edtReason.getText().toString();
+        String amountStr = edtCost.getText().toString();
+
+        if (note.isEmpty() || amountStr.isEmpty()) return;
+
+        // Tạo object mới nhưng GIỮ NGUYÊN ID CŨ
+        Transaction t = new Transaction(
+                currentTransaction.getId(), // Quan trọng: ID cũ
+                note,
+                Double.parseDouble(amountStr),
+                edtDate.getText().toString(),
+                spinnerCategory.getSelectedItem().toString(),
+                edtNote.getText().toString()
+        );
+
+        db.updateTransaction(t);
+        Toast.makeText(this, "Đã cập nhật!", Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private void deleteData() {
         new AlertDialog.Builder(this)
-                .setTitle("Confirm Delete")
-                .setMessage("Are you sure you want to delete this transaction?")
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // GỌI APPDATA ĐỂ XÓA
-                        AppData.getInstance().removeTransaction(position);
-                        Toast.makeText(EditActivity.this, "Deleted!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
+                .setTitle("Xóa giao dịch")
+                .setMessage("Bạn có chắc chắn muốn xóa?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    db.deleteTransaction(currentTransaction.getId());
+                    Toast.makeText(this, "Đã xóa!", Toast.LENGTH_SHORT).show();
+                    finish();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Hủy", null)
                 .show();
+    }
+
+    private void showDatePicker() {
+        Calendar c = Calendar.getInstance();
+        new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+            edtDate.setText(year + "-" + (month + 1) + "-" + dayOfMonth);
+        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 }

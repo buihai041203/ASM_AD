@@ -103,4 +103,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return total;
     }
+
+    public void deleteTransaction(int id) {
+
+    }
 }
