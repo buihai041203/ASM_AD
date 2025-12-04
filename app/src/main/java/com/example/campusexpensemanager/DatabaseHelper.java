@@ -130,6 +130,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    public double getTotalBudget() {
+        String thangNam = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT COALESCE(" + NS_SO_TIEN_DU_KIEN + ", 0) FROM " + TABLE_NGAN_SACH + " WHERE " + NS_THANG_NAM + " = ?", new String[]{thangNam});
+        double budget = c.moveToFirst() ? c.getDouble(0) : 0;
+        c.close();
+        return budget;
+    }
+
     @Override
     public void onConfigure(SQLiteDatabase db) {
         db.setForeignKeyConstraintsEnabled(true);
@@ -197,4 +206,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         double conLai = duKien - tongChi;
         db.execSQL("UPDATE " + TABLE_NGAN_SACH + " SET " + NS_SO_TIEN_CON_LAI + " = ? WHERE " + NS_THANG_NAM + " = ?", new Object[]{conLai, thangNam});
     }
+
+
 }
