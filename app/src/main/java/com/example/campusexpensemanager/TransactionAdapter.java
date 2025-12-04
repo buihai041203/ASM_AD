@@ -13,43 +13,56 @@ import java.util.List;
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.TransactionViewHolder> {
 
     private List<Transaction> transactionList;
-    private OnItemClickListener listener; // Biến lắng nghe sự kiện
+    private OnItemClickListener listener;
 
-    // 1. Tạo Interface (Cái cổng giao tiếp)
-    public interface OnItemClickListener {
-        void onItemClick(int position);
+    public void setOnItemClickListener(OnItemClickListener position) {
+
     }
 
-    // 2. Hàm để Main cài đặt sự kiện
-    public void setOnItemClickListener(OnItemClickListener listener) {
+    // Interface giao tiếp
+    public interface OnItemClickListener {
+        void onItemClick(Transaction transaction);
+    }
+
+    // Constructor chuẩn
+    public TransactionAdapter(List<Transaction> transactionList, OnItemClickListener listener) {
+        this.transactionList = transactionList;
         this.listener = listener;
     }
 
-    public TransactionAdapter(List<Transaction> transactionList) {
-        this.transactionList = transactionList;
+    public void updateData(List<Transaction> list) {
+        this.transactionList = list;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public TransactionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Dùng layout có sẵn của Android cho nhanh
+        // Dùng layout có sẵn 2 dòng của Android
         View view = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
-        return new TransactionViewHolder(view, listener);
+        return new TransactionViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull TransactionViewHolder holder, int position) {
         Transaction transaction = transactionList.get(position);
-        DecimalFormat formatter = new DecimalFormat("#,###");
+        DecimalFormat formatter = new DecimalFormat("#,### đ");
 
-        holder.text1.setText(transaction.getTitle() + " : " + formatter.format(transaction.getAmount()));
-        holder.text2.setText(transaction.getTime());
+        // Dòng 1: Tên khoản chi + Số tiền
+        holder.text1.setText(transaction.getNote() + " - " + formatter.format(transaction.getAmount()));
 
-        if (transaction.getAmount() < 0) {
-            holder.text1.setTextColor(Color.RED);
-        } else {
-            holder.text1.setTextColor(Color.parseColor("#43A047"));
-        }
+        // Dòng 2: Ngày + Danh mục
+        holder.text2.setText(transaction.getDate() + " | " + transaction.getCategory());
+
+        // Đổi màu tiền (Ví dụ đơn giản)
+        holder.text1.setTextColor(Color.parseColor("#43A047")); // Màu xanh
+
+        // Bắt sự kiện click
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(transaction);
+            }
+        });
     }
 
     @Override
@@ -60,23 +73,10 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     public static class TransactionViewHolder extends RecyclerView.ViewHolder {
         TextView text1, text2;
 
-        public TransactionViewHolder(@NonNull View itemView, final OnItemClickListener listener) {
+        public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
             text1 = itemView.findViewById(android.R.id.text1);
             text2 = itemView.findViewById(android.R.id.text2);
-
-            // 3. Bắt sự kiện click vào dòng
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (listener != null) {
-                        int position = getAdapterPosition();
-                        if (position != RecyclerView.NO_POSITION) {
-                            listener.onItemClick(position);
-                        }
-                    }
-                }
-            });
         }
     }
 }

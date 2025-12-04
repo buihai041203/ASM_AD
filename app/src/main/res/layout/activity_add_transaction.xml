@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:gravity="center"
-            android:text="Chỉnh Sửa Chi Phí"
+            android:text="Thêm Chi Phí Mới"
             android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:textStyle="bold" />
@@ -33,7 +33,7 @@
             app:hintTextColor="@color/accent_blue">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtCostEdit"
+                android:id="@+id/edtAmount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="#2B3EA8"
@@ -47,11 +47,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:hint="Tên chi phí (VD: Mua rau)"
+            android:hint="Tên chi phí (VD: Mua rau, Đổ xăng)"
             app:hintTextColor="@color/text_secondary">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtReasonEdit"
+                android:id="@+id/edtNote"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="#3345AD"
@@ -90,6 +90,7 @@
                 android:drawableEnd="@android:drawable/ic_menu_my_calendar"
                 android:drawableTint="@color/text_secondary"
                 android:focusable="false"
+                android:text="03/12/2025"
                 android:textColor="@color/text_primary" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -97,11 +98,11 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:hint="Mô tả chi tiết">
+            android:layout_marginBottom="32dp"
+            android:hint="Mô tả chi tiết (Tùy chọn)">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edtNoteEdit"
+                android:id="@+id/edtDescription"
                 android:layout_width="match_parent"
                 android:layout_height="100dp"
                 android:background="#2C3EA0"
@@ -109,16 +110,6 @@
                 android:inputType="textMultiLine"
                 android:textColor="@color/text_primary" />
         </com.google.android.material.textfield.TextInputLayout>
-
-        <Button
-            android:id="@+id/btnDelete"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#D32F2F"
-            android:text="Xóa giao dịch này"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -136,13 +127,13 @@
                 android:textColor="@color/text_primary" />
 
             <Button
-                android:id="@+id/btnUpdate"
+                android:id="@+id/btnSaveTransaction"
                 android:layout_width="0dp"
                 android:layout_height="60dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:backgroundTint="@color/accent_blue"
-                android:text="Lưu thay đổi"
+                android:text="Thêm chi phí"
                 android:textColor="@color/white" />
         </LinearLayout>
 
