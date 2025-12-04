@@ -6,105 +6,184 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import com.example.campusexpensemanager.Transaction;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "ExpenseManager.db";
-    private static final int DATABASE_VERSION = 2; // Lưu ý version
+    private static final String DB_NAME = "QuanLyTaiChinh.db";
+    private static final int DB_VERSION = 1;
+
+    // ==================== 1. BẢNG USER ====================
+    public static final String TABLE_USER = "users";
+    public static final String USER_ID = "user_id";
+    public static final String USER_HO_TEN = "ho_ten";
+    public static final String USER_EMAIL = "email";
+    public static final String USER_MAT_KHAU = "mat_khau";
+
+    private static final String CREATE_USER =
+            "CREATE TABLE " + TABLE_USER + " (" +
+                    USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    USER_HO_TEN + " TEXT NOT NULL, " +
+                    USER_EMAIL + " TEXT UNIQUE NOT NULL, " +
+                    USER_MAT_KHAU + " TEXT NOT NULL" +
+                    ");";
+
+    // ==================== 2. BẢNG LOẠI CHI PHÍ (chỉ 2 cột) ====================
+    public static final String TABLE_LOAI_CHI_PHI = "loai_chi_phi";
+    public static final String LOAI_ID = "id_phat_sinh";        // PK
+    public static final String LOAI_TEN = "loai_chi_phi";
+
+    private static final String CREATE_LOAI_CHI_PHI =
+            "CREATE TABLE " + TABLE_LOAI_CHI_PHI + " (" +
+                    LOAI_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    LOAI_TEN + " TEXT NOT NULL UNIQUE" +
+                    ");";
+
+    // ==================== 3. BẢNG CHI PHÍ CỐ ĐỊNH (chỉ 3 cột) ====================
+    public static final String TABLE_CHI_PHI_CO_DINH = "chi_phi_co_dinh";
+    public static final String CD_ID = "id_co_dinh";
+    public static final String CD_TEN = "ten_chi_phi";
+    public static final String CD_SO_TIEN = "so_tien";
+
+    private static final String CREATE_CHI_PHI_CO_DINH =
+            "CREATE TABLE " + TABLE_CHI_PHI_CO_DINH + " (" +
+                    CD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    CD_TEN + " TEXT NOT NULL, " +
+                    CD_SO_TIEN + " REAL NOT NULL" +
+                    ");";
+
+    // ==================== 4. BẢNG NGÂN SÁCH ====================
+    public static final String TABLE_NGAN_SACH = "ngan_sach";
+    public static final String NS_ID = "ns_id";
+    public static final String NS_THANG_NAM = "thang_nam";            // YYYY-MM
+    public static final String NS_SO_TIEN_DU_KIEN = "so_tien_du_kien";
+    public static final String NS_SO_TIEN_CON_LAI = "so_tien_con_lai";
+
+    private static final String CREATE_NGAN_SACH =
+            "CREATE TABLE " + TABLE_NGAN_SACH + " (" +
+                    NS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    NS_THANG_NAM + " TEXT NOT NULL UNIQUE, " +
+                    NS_SO_TIEN_DU_KIEN + " REAL NOT NULL DEFAULT 0, " +
+                    NS_SO_TIEN_CON_LAI + " REAL NOT NULL DEFAULT 0" +
+                    ");";
+
+    // ==================== 5. BẢNG CHI TIÊU (6 cột) ====================
+    public static final String TABLE_CHI_TIEU = "chi_tieu";
+    public static final String CT_ID = "ct_id";
+    public static final String CT_LOAI_ID = "loai_id";           // FK → loai_chi_phi.id_phat_sinh
+    public static final String CT_SO_TIEN = "so_tien";
+    public static final String CT_NGAY = "ngay";                 // YYYY-MM-DD
+    public static final String CT_GHI_CHU = "ghi_chu";
+    public static final String CT_THANG_NAM = "thang_nam";       // YYYY-MM
+
+    private static final String CREATE_CHI_TIEU =
+            "CREATE TABLE " + TABLE_CHI_TIEU + " (" +
+                    CT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    CT_LOAI_ID + " INTEGER NOT NULL, " +
+                    CT_SO_TIEN + " REAL NOT NULL, " +
+                    CT_NGAY + " TEXT NOT NULL, " +
+                    CT_GHI_CHU + " TEXT, " +
+                    CT_THANG_NAM + " TEXT NOT NULL, " +
+                    "FOREIGN KEY(" + CT_LOAI_ID + ") REFERENCES " + TABLE_LOAI_CHI_PHI + "(" + LOAI_ID + ")" +
+                    ");";
+
+    // ==================== LOẠI CHI PHÍ CỐ ĐỊNH ĐẶC BIỆT ====================
+    private static final String LOAI_CO_DINH = "Chi phí cố định hàng tháng";
 
     public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context, DB_NAME, null, DB_VERSION);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Bảng Giao dịch
-        db.execSQL("CREATE TABLE transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, amount REAL, date TEXT, category TEXT, description TEXT)");
-        // Bảng Ngân sách
-        db.execSQL("CREATE TABLE budgets (id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT UNIQUE, limit_amount REAL)");
+        db.execSQL(CREATE_USER);
+        db.execSQL(CREATE_LOAI_CHI_PHI);
+        db.execSQL(CREATE_CHI_PHI_CO_DINH);
+        db.execSQL(CREATE_NGAN_SACH);
+        db.execSQL(CREATE_CHI_TIEU);
+
+        // TỰ ĐỘNG tạo loại chi phí cố định (ID = 1) – dùng cho hệ thống
+        db.execSQL("INSERT INTO " + TABLE_LOAI_CHI_PHI + " (" + LOAI_TEN + ") VALUES ('" + LOAI_CO_DINH + "')");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS transactions");
-        db.execSQL("DROP TABLE IF EXISTS budgets");
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CHI_TIEU);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NGAN_SACH);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CHI_PHI_CO_DINH);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_LOAI_CHI_PHI);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
         onCreate(db);
     }
 
-    // --- TRANSACTION LOGIC ---
-    public void addTransaction(Transaction t) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("note", t.getNote());
-        values.put("amount", t.getAmount());
-        values.put("date", t.getDate());
-        values.put("category", t.getCategory());
-        values.put("description", t.getDescription());
-        db.insert("transactions", null, values);
-        db.close();
+    @Override
+    public void onConfigure(SQLiteDatabase db) {
+        db.setForeignKeyConstraintsEnabled(true);
     }
 
-    public void updateTransaction(Transaction t) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("note", t.getNote());
-        values.put("amount", t.getAmount());
-        values.put("date", t.getDate());
-        values.put("category", t.getCategory());
-        values.put("description", t.getDescription());
-        db.update("transactions", values, "id = ?", new String[]{String.valueOf(t.getId())});
-        db.close();
+    // ==================== HÀM TỰ ĐỘNG TRỪ CHI PHÍ CỐ ĐỊNH ĐẦU THÁNG ====================
+    public void kiemTraVaTruChiPhiCoDinhDauThang() {
+        String thangNam = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
+        if (daTruChiPhiCoDinhThangNay(thangNam)) return;
+        truChiPhiCoDinhVaoDauThang(thangNam);
     }
 
-    public List<Transaction> getAllTransactions() {
-        List<Transaction> list = new ArrayList<>();
+    private boolean daTruChiPhiCoDinhThangNay(String thangNam) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM transactions ORDER BY date DESC", null);
-        if (cursor.moveToFirst()) {
-            do {
-                list.add(new Transaction(
-                        cursor.getInt(0), cursor.getString(1), cursor.getDouble(2),
-                        cursor.getString(3), cursor.getString(4), cursor.getString(5)
-                ));
-            } while (cursor.moveToNext());
+        Cursor c = db.rawQuery("SELECT 1 FROM " + TABLE_CHI_TIEU + " WHERE " + CT_THANG_NAM + " = ? AND " + CT_GHI_CHU + " = ? LIMIT 1",
+                new String[]{thangNam, "CHI_PHI_CO_DINH_TU_DONG"});
+        boolean exists = c.moveToFirst();
+        c.close();
+        return exists;
+    }
+
+    private void truChiPhiCoDinhVaoDauThang(String thangNam) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            // Tổng chi phí cố định
+            Cursor c = db.rawQuery("SELECT COALESCE(SUM(" + CD_SO_TIEN + "), 0) FROM " + TABLE_CHI_PHI_CO_DINH, null);
+            c.moveToFirst();
+            double tong = c.getDouble(0);
+            c.close();
+            if (tong <= 0) return;
+
+            // Thêm vào chi_tieu (loai_id = 1)
+            ContentValues cv = new ContentValues();
+            cv.put(CT_LOAI_ID, 1);                                      // ID = 1 → Chi phí cố định
+            cv.put(CT_SO_TIEN, tong);
+            cv.put(CT_NGAY, thangNam + "-01");
+            cv.put(CT_GHI_CHU, "CHI_PHI_CO_DINH_TU_DONG");
+            cv.put(CT_THANG_NAM, thangNam);
+            db.insert(TABLE_CHI_TIEU, null, cv);
+
+            // Cập nhật ngân sách
+            capNhatSoTienConLai(thangNam);
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
-        cursor.close();
-        return list;
     }
 
-    public double getTotalExpense() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(amount) FROM transactions", null);
-        double total = 0;
-        if (cursor.moveToFirst()) total = cursor.getDouble(0);
-        cursor.close();
-        return total;
-    }
-
-    // --- BUDGET LOGIC ---
-    public void setBudget(double amount) {
+    // Cập nhật số tiền còn lại mỗi khi có thay đổi chi tiêu
+    public void capNhatSoTienConLai(String thangNam) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("category", "General"); // Mặc định 1 ngân sách chung
-        values.put("limit_amount", amount);
+        Cursor c1 = db.rawQuery("SELECT COALESCE(SUM(" + CT_SO_TIEN + "), 0) FROM " + TABLE_CHI_TIEU + " WHERE " + CT_THANG_NAM + " = ?", new String[]{thangNam});
+        c1.moveToFirst();
+        double tongChi = c1.getDouble(0);
+        c1.close();
 
-        int rows = db.update("budgets", values, "category = ?", new String[]{"General"});
-        if (rows == 0) db.insert("budgets", null, values);
-        db.close();
-    }
+        Cursor c2 = db.rawQuery("SELECT " + NS_SO_TIEN_DU_KIEN + " FROM " + TABLE_NGAN_SACH + " WHERE " + NS_THANG_NAM + " = ?", new String[]{thangNam});
+        double duKien = c2.moveToFirst() ? c2.getDouble(0) : 0;
+        c2.close();
 
-    public double getTotalBudget() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(limit_amount) FROM budgets", null);
-        double total = 0;
-        if (cursor.moveToFirst()) total = cursor.getDouble(0);
-        cursor.close();
-        return total;
-    }
-
-    public void deleteTransaction(int id) {
-
+        double conLai = duKien - tongChi;
+        db.execSQL("UPDATE " + TABLE_NGAN_SACH + " SET " + NS_SO_TIEN_CON_LAI + " = ? WHERE " + NS_THANG_NAM + " = ?", new Object[]{conLai, thangNam});
     }
 }
