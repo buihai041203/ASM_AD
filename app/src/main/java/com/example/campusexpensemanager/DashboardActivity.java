@@ -31,7 +31,8 @@ public class DashboardActivity extends AppCompatActivity {
     private PieChart pieChart;
     private RecyclerView rvDailyExpenses;
     private TransactionAdapter adapter;
-    private List<Transaction> allTransactions;
+    // allTransactions không cần thiết nữa, có thể bỏ, nhưng tôi giữ lại ở trạng thái null để không gây lỗi logic
+    // private List<Transaction> allTransactions; // BỎ DÒNG NÀY ĐI
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,8 @@ public class DashboardActivity extends AppCompatActivity {
         AdapterView.OnItemSelectedListener pieFilterListener = new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                updateDashboardStats(); // Tính toán lại số liệu
+                // Chỉ cần gọi updateDashboardStats() vì hàm này đã truy vấn DB trực tiếp
+                updateDashboardStats();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
@@ -59,7 +61,8 @@ public class DashboardActivity extends AppCompatActivity {
         AdapterView.OnItemSelectedListener listFilterListener = new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                updateDailyList(); // Load lại list
+                // Chỉ cần gọi updateDailyList() vì hàm này đã truy vấn DB trực tiếp
+                updateDailyList();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
@@ -72,8 +75,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Load lại dữ liệu mỗi khi quay lại màn hình này (VD: vừa thêm mới xong)
-        allTransactions = db.getAllTransactions();
+        // Không cần load allTransactions nữa
         updateDashboardStats();
         updateDailyList();
     }
@@ -109,6 +111,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         List<Integer> years = new ArrayList<>();
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        // Năm hiện tại nằm ở vị trí index 2 (currentYear - 2, currentYear - 1, currentYear, ...)
         for (int i = currentYear - 2; i <= currentYear + 5; i++) years.add(i);
 
         ArrayAdapter<Integer> dayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, days);
@@ -130,50 +133,32 @@ public class DashboardActivity extends AppCompatActivity {
         // Mặc định chọn ngày hôm nay
         Calendar c = Calendar.getInstance();
         spDay.setSelection(c.get(Calendar.DAY_OF_MONTH) - 1);
-        spMonth.setSelection(c.get(Calendar.MONTH));
-        spYear.setSelection(2); // Giả sử năm hiện tại nằm ở vị trí thứ 2 (index 2)
+        spMonth.setSelection(c.get(Calendar.MONTH)); // Calendar.MONTH trả về 0-11
+        spYear.setSelection(2);
 
         spMonthPie.setSelection(c.get(Calendar.MONTH));
         spYearPie.setSelection(2);
     }
 
-    // --- LOGIC 1: CẬP NHẬT THỐNG KÊ & PIE CHART ---
+    // --- LOGIC 1: CẬP NHẬT THỐNG KÊ & PIE CHART (TỐI ƯU HÓA TRUY VẤN DB) ---
     private void updateDashboardStats() {
-        if (allTransactions == null) return;
-
+        // 1. Lấy khóa tháng/năm từ Spinner Pie Chart
         int selectedMonth = Integer.parseInt(spMonthPie.getSelectedItem().toString());
         int selectedYear = Integer.parseInt(spYearPie.getSelectedItem().toString());
         String monthKey = String.format("%d-%02d", selectedYear, selectedMonth); // Format: YYYY-MM
 
-        double totalExpense = 0;
+        // 2. Truy vấn DB để lấy tổng chi tiêu và ngân sách
+        double totalExpense = db.getTotalExpenseByMonth(monthKey);
+        double budget = db.getBudgetByMonth(monthKey);
+        double balance = budget - totalExpense;
+
+        // 3. Truy vấn DB để lấy dữ liệu gom nhóm cho PieChart
+        java.util.HashMap<String, Double> categoryMap = db.getMonthlyExpensesByCategory(monthKey);
+
         List<PieEntry> entries = new ArrayList<>();
-
-        // 1. Tính tổng chi tiêu của tháng đang chọn & gom nhóm cho PieChart
-        // Logic: Duyệt qua tất cả transaction, cái nào khớp tháng/năm thì cộng vào
-        // (Đây là cách đơn giản nhất, với dữ liệu nhỏ < 1000 dòng thì không lo chậm)
-
-        // Dùng Map tạm để gom nhóm theo Category
-        java.util.HashMap<String, Double> categoryMap = new java.util.HashMap<>();
-
-        for (Transaction t : allTransactions) {
-            // Cắt chuỗi ngày YYYY-MM-DD lấy YYYY-MM
-            if (t.getDate().startsWith(monthKey)) {
-                totalExpense += t.getAmount();
-
-                // Cộng dồn theo danh mục
-                double currentVal = categoryMap.getOrDefault(t.getCategory(), 0.0);
-                categoryMap.put(t.getCategory(), currentVal + t.getAmount());
-            }
-        }
-
-        // 2. Tạo dữ liệu cho PieChart
         for (String cat : categoryMap.keySet()) {
             entries.add(new PieEntry(categoryMap.get(cat).floatValue(), cat));
         }
-
-        // 3. Lấy ngân sách từ DB
-        double budget = db.getBudgetByMonth(monthKey);
-        double balance = budget - totalExpense;
 
         // 4. Hiển thị lên Header
         DecimalFormat df = new DecimalFormat("#,### đ");
@@ -190,7 +175,7 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void drawPieChart(List<PieEntry> entries) {
         if (entries.isEmpty()) {
-            pieChart.clear(); // Xóa biểu đồ nếu không có dữ liệu
+            pieChart.clear();
             pieChart.setNoDataText("Chưa có chi tiêu trong tháng này");
             pieChart.setNoDataTextColor(Color.WHITE);
             return;
@@ -204,22 +189,21 @@ public class DashboardActivity extends AppCompatActivity {
         PieData data = new PieData(dataSet);
         pieChart.setData(data);
 
-        // Cấu hình giao diện biểu đồ (Màu trắng cho Dark Mode)
+        // Cấu hình giao diện biểu đồ
         pieChart.setEntryLabelColor(Color.WHITE);
         pieChart.setCenterText("Chi Tiêu");
-        pieChart.setCenterTextColor(Color.BLACK); // Tâm biểu đồ màu đen cho dễ đọc trên nền trắng
+        pieChart.setCenterTextColor(Color.BLACK);
         pieChart.setHoleColor(Color.WHITE);
         pieChart.getDescription().setEnabled(false);
         pieChart.getLegend().setTextColor(Color.WHITE);
 
         pieChart.animateY(1000);
-        pieChart.invalidate(); // Refresh
+        pieChart.invalidate();
     }
 
-    // --- LOGIC 2: CẬP NHẬT LIST THEO NGÀY ---
+    // --- LOGIC 2: CẬP NHẬT LIST THEO NGÀY (TỐI ƯU HÓA TRUY VẤN DB) ---
     private void updateDailyList() {
-        if (allTransactions == null) return;
-
+        // 1. Lấy ngày/tháng/năm từ Spinner List Filter
         int d = Integer.parseInt(spDay.getSelectedItem().toString());
         int m = Integer.parseInt(spMonth.getSelectedItem().toString());
         int y = Integer.parseInt(spYear.getSelectedItem().toString());
@@ -227,14 +211,10 @@ public class DashboardActivity extends AppCompatActivity {
         // Tạo chuỗi ngày đúng định dạng DB: YYYY-MM-DD
         String targetDate = String.format("%d-%02d-%02d", y, m, d);
 
-        List<Transaction> filteredList = new ArrayList<>();
-        for (Transaction t : allTransactions) {
-            if (t.getDate().equals(targetDate)) {
-                filteredList.add(t);
-            }
-        }
+        // 2. Truy vấn DB để lấy danh sách giao dịch của ngày chỉ định
+        List<Transaction> filteredList = db.getTransactionsByDate(targetDate);
 
-        // Đổ vào RecyclerView
+        // 3. Đổ vào RecyclerView
         adapter = new TransactionAdapter(filteredList, transaction -> {
             // Khi click vào item -> Mở EditActivity
             Intent intent = new Intent(DashboardActivity.this, EditActivity.class);

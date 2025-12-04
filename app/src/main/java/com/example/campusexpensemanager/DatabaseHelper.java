@@ -300,4 +300,96 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.insert(TABLE_NGAN_SACH, null, values);
         }
     }
+
+    // Lấy tổng chi tiêu của MỘT THÁNG bất kỳ (đã có getTotalExpense() nhưng hàm đó chỉ cho tháng hiện tại)
+    public double getTotalExpenseByMonth(String monthKey) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        double total = 0;
+        Cursor cursor = db.rawQuery("SELECT SUM(" + CT_SO_TIEN + ") FROM " + TABLE_CHI_TIEU + " WHERE " + CT_THANG_NAM + " = ?", new String[]{monthKey});
+        if (cursor.moveToFirst()) {
+            total = cursor.getDouble(0);
+        }
+        cursor.close();
+        return total;
+    }
+
+    // Lấy chi tiêu đã được gom nhóm theo Category của MỘT THÁNG bất kỳ (Dùng cho Pie Chart)
+    public java.util.HashMap<String, Double> getMonthlyExpensesByCategory(String monthKey) {
+        java.util.HashMap<String, Double> categoryMap = new java.util.HashMap<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query: Gom nhóm theo LOAI_TEN và tính SUM
+        String query = "SELECT l." + LOAI_TEN + ", SUM(t." + CT_SO_TIEN + ") " +
+                " FROM " + TABLE_CHI_TIEU + " t " +
+                " JOIN " + TABLE_LOAI_CHI_PHI + " l ON t." + CT_LOAI_ID + " = l." + LOAI_ID +
+                " WHERE t." + CT_THANG_NAM + " = ? " +
+                " GROUP BY l." + LOAI_TEN;
+
+        Cursor cursor = db.rawQuery(query, new String[]{monthKey});
+        if (cursor.moveToFirst()) {
+            do {
+                String category = cursor.getString(0);
+                double sum = cursor.getDouble(1);
+                categoryMap.put(category, sum);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return categoryMap;
+    }
+
+    // Lấy chi tiết giao dịch theo NGÀY (Dùng cho RecyclerView)
+    public List<Transaction> getTransactionsByDate(String targetDate) {
+        List<Transaction> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query: Lấy chi tiết giao dịch của ngày chỉ định
+        String query = "SELECT t." + CT_ID + ", t." + CT_GHI_CHU + ", t." + CT_SO_TIEN + ", t." + CT_NGAY + ", l." + LOAI_TEN +
+                " FROM " + TABLE_CHI_TIEU + " t " +
+                " JOIN " + TABLE_LOAI_CHI_PHI + " l ON t." + CT_LOAI_ID + " = l." + LOAI_ID +
+                " WHERE t." + CT_NGAY + " = ?" +
+                " ORDER BY t." + CT_ID + " DESC";
+
+        Cursor cursor = db.rawQuery(query, new String[]{targetDate});
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(0);
+                String note = cursor.getString(1);
+                double amount = cursor.getDouble(2);
+                String date = cursor.getString(3);
+                String category = cursor.getString(4);
+                // Dùng note cho description theo quy ước của bạn
+                list.add(new Transaction(id, note, amount, date, category, note));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return list;
+    }
+
+    // Lấy chi tiết giao dịch theo THÁNG
+    public List<Transaction> getTransactionsByMonth(String monthKey) {
+        List<Transaction> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Query: Lấy chi tiết giao dịch của tháng chỉ định
+        String query = "SELECT t." + CT_ID + ", t." + CT_GHI_CHU + ", t." + CT_SO_TIEN + ", t." + CT_NGAY + ", l." + LOAI_TEN +
+                " FROM " + TABLE_CHI_TIEU + " t " +
+                " JOIN " + TABLE_LOAI_CHI_PHI + " l ON t." + CT_LOAI_ID + " = l." + LOAI_ID +
+                " WHERE t." + CT_THANG_NAM + " = ?" +
+                " ORDER BY t." + CT_NGAY + " DESC"; // Sắp xếp theo ngày
+
+        Cursor cursor = db.rawQuery(query, new String[]{monthKey});
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(0);
+                String note = cursor.getString(1);
+                double amount = cursor.getDouble(2);
+                String date = cursor.getString(3);
+                String category = cursor.getString(4);
+                // Dùng note cho description theo quy ước của bạn
+                list.add(new Transaction(id, note, amount, date, category, note));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return list;
+    }
 }
