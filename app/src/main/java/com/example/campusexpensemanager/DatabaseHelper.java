@@ -107,8 +107,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_NGAN_SACH);
         db.execSQL(CREATE_CHI_TIEU);
 
-        // TỰ ĐỘNG tạo loại chi phí cố định (ID = 1) – dùng cho hệ thống
-        db.execSQL("INSERT INTO " + TABLE_LOAI_CHI_PHI + " (" + LOAI_TEN + ") VALUES ('" + LOAI_CO_DINH + "')");
+        String[] loaiMacDinh = {
+                "Chi phí cố định hàng tháng",  // ID = 1 → hệ thống dùng
+                "Ăn uống", "Xăng xe / Đi lại", "Mua sắm / Shopping", "Giải trí", "Y tế / Thuốc men",
+                "Khác"
+        };
+
+        for (String ten : loaiMacDinh) {
+            ContentValues cv = new ContentValues();
+            cv.put(LOAI_TEN, ten);
+            db.insert(TABLE_LOAI_CHI_PHI, null, cv);
+        }
     }
 
     @Override
