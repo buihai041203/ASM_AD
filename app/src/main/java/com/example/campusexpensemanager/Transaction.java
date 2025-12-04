@@ -6,11 +6,11 @@ public class Transaction implements Serializable {
     private int id;
     private String note;        // Tên khoản chi (VD: Mua cơm)
     private double amount;      // Số tiền
-    private String date;        // Ngày
-    private String category;    // Danh mục
-    private String description; // Mô tả thêm
+    private String date;        // Ngày (YYYY-MM-DD)
+    private String category;    // Tên Danh mục (VD: Ăn uống)
+    private String description; // Mô tả chi tiết
 
-    // Constructor đầy đủ dùng khi đọc từ DB
+    // Constructor chuẩn dùng khi đọc từ DB và Thêm mới
     public Transaction(int id, String note, double amount, String date, String category, String description) {
         this.id = id;
         this.note = note;
@@ -18,10 +18,6 @@ public class Transaction implements Serializable {
         this.date = date;
         this.category = category;
         this.description = description;
-    }
-
-    public Transaction(String salary, String note, int amount) {
-
     }
 
     // Getters

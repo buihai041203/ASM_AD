@@ -24,7 +24,7 @@ public class AddTransactionActivity extends AppCompatActivity {
 
         db = new DatabaseHelper(this);
 
-        // 1. Ánh xạ (Phải khớp ID trong XML activity_add_transaction)
+        // 1. Ánh xạ View
         edtAmount = findViewById(R.id.edtAmount);
         edtNote = findViewById(R.id.edtNote);
         edtDate = findViewById(R.id.edtDate);
@@ -33,43 +33,69 @@ public class AddTransactionActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSaveTransaction);
         btnCancel = findViewById(R.id.btnCancel);
 
-        // 2. Setup Spinner
-        String[] cats = {"Tiền thuê nhà", "Ăn uống", "Đi lại", "Giải trí", "Giáo dục", "Y tế", "Khác"};
+        // 2. Setup Spinner (BUG FIX: Chỉ hiện từ "Ăn uống" trở đi, bỏ "Chi phí cố định")
+        // LƯU Ý: Tên ở đây phải GIỐNG HỆT tên trong DatabaseHelper thì mới tìm ra ID được
+        String[] cats = {
+                "Ăn uống",
+                "Xăng xe / Đi lại",
+                "Mua sắm / Shopping",
+                "Giải trí",
+                "Y tế / Thuốc men",
+                "Khác"
+        };
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, cats);
         spinner.setAdapter(adapter);
 
+        // Mặc định ngày hiện tại (Format chuẩn YYYY-MM-DD để DB sắp xếp đúng)
+        Calendar c = Calendar.getInstance();
+        String today = String.format("%d-%02d-%02d", c.get(Calendar.YEAR), (c.get(Calendar.MONTH) + 1), c.get(Calendar.DAY_OF_MONTH));
+        edtDate.setText(today);
+
         // 3. Chọn ngày
         edtDate.setOnClickListener(v -> {
-            Calendar c = Calendar.getInstance();
             new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-                edtDate.setText(year + "-" + (month + 1) + "-" + dayOfMonth);
+                // BUG FIX: Format ngày tháng có số 0 đằng trước (VD: 2025-05-01 thay vì 2025-5-1)
+                String dateStr = String.format("%d-%02d-%02d", year, (month + 1), dayOfMonth);
+                edtDate.setText(dateStr);
             }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
         });
 
         // 4. Lưu
         btnSave.setOnClickListener(v -> {
-            String amountStr = edtAmount.getText().toString();
-            String note = edtNote.getText().toString();
+            String amountStr = edtAmount.getText().toString().trim();
+            String note = edtNote.getText().toString().trim();
+            String date = edtDate.getText().toString().trim();
+            String desc = edtDesc.getText().toString().trim();
 
             if (amountStr.isEmpty() || note.isEmpty()) {
-                Toast.makeText(this, "Nhập thiếu thông tin!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Vui lòng nhập tên khoản chi và số tiền!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Transaction t = new Transaction(
-                    0, // ID tự tăng
-                    note,
-                    Double.parseDouble(amountStr),
-                    edtDate.getText().toString(),
-                    spinner.getSelectedItem().toString(),
-                    edtDesc.getText().toString()
-            );
+            try {
+                double amount = Double.parseDouble(amountStr);
+                String categoryName = spinner.getSelectedItem().toString();
 
-            db.addTransaction(t); // Gọi hàm thêm
-            Toast.makeText(this, "Đã thêm!", Toast.LENGTH_SHORT).show();
-            finish();
+                Transaction t = new Transaction(
+                        0, // ID tự tăng
+                        note,
+                        amount,
+                        date,
+                        categoryName, // Gửi tên, DatabaseHelper sẽ tự tìm ID
+                        desc
+                );
+
+                db.addTransaction(t);
+                Toast.makeText(this, "Đã thêm thành công!", Toast.LENGTH_SHORT).show();
+                finish();
+
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Số tiền không hợp lệ!", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnCancel.setOnClickListener(v -> finish());
+
     }
 }
