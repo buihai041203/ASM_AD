@@ -68,8 +68,10 @@ public class ReportActivity extends AppCompatActivity {
 
         // Mặc định chọn tháng/năm hiện tại
         Calendar c = Calendar.getInstance();
-        spinnerMonth.setSelection(c.get(Calendar.MONTH)); // Index tháng bắt đầu từ 0
-        spinnerYear.setSelection(2); // Chọn năm hiện tại (vị trí index 2 trong list 5 năm)
+        // Calendar.MONTH trả về 0-11, trùng khớp với index của mảng months
+        spinnerMonth.setSelection(c.get(Calendar.MONTH));
+        // Giả sử năm hiện tại nằm ở vị trí index 2
+        spinnerYear.setSelection(2);
     }
 
     private void loadReport() {
@@ -79,45 +81,44 @@ public class ReportActivity extends AppCompatActivity {
         // Key lọc: YYYY-MM (Ví dụ: 2025-12)
         String filterKey = String.format("%d-%02d", selectedYear, selectedMonth);
 
-        // --- BƯỚC 1: Lấy dữ liệu từ DatabaseHelper mới ---
-        List<Transaction> allTransactions = db.getAllTransactions();
+        // --- BƯỚC 1: Lấy dữ liệu từ DatabaseHelper (Tối ưu hóa) ---
 
-        // --- BƯỚC 2: Xử lý lọc dữ liệu (Filter) ---
-        List<Transaction> filteredList = new ArrayList<>();
+        // 1.1. Lấy danh sách giao dịch chi tiết theo tháng
+        // (Sử dụng hàm getTransactionsByMonth mới)
+        List<Transaction> filteredList = db.getTransactionsByMonth(filterKey);
+
+        // 1.2. Lấy tổng chi tiêu theo danh mục (Đã gom nhóm)
+        // (Sử dụng hàm getMonthlyExpensesByCategory đã có/được thêm)
+        Map<String, Double> categoryMap = db.getMonthlyExpensesByCategory(filterKey);
+
+        // 1.3. Lấy ngân sách và tính tổng chi tiêu
+        double budget = db.getBudgetByMonth(filterKey);
+        // Tính tổng chi tiêu từ categoryMap (tối ưu hơn là gọi hàm DB khác)
         double totalExpense = 0;
-        Map<String, Double> categoryMap = new HashMap<>();
-
-        for (Transaction t : allTransactions) {
-            // Kiểm tra ngày giao dịch có thuộc tháng đang chọn không
-            if (t.getDate().startsWith(filterKey)) {
-                filteredList.add(t);
-                totalExpense += t.getAmount();
-
-                // Gom nhóm số tiền theo danh mục
-                double currentAmount = categoryMap.getOrDefault(t.getCategory(), 0.0);
-                categoryMap.put(t.getCategory(), currentAmount + t.getAmount());
-            }
+        for (Double amount : categoryMap.values()) {
+            totalExpense += amount;
         }
 
-        // --- BƯỚC 3: Hiển thị Tổng chi & Số dư ---
-        txtTotalExpense.setText("Tổng chi tiêu: " + moneyFormat.format(totalExpense));
-
-        // Sử dụng hàm getBudgetByMonth đã có trong DatabaseHelper
-        double budget = db.getBudgetByMonth(filterKey);
+        // --- BƯỚC 2: Hiển thị Tổng chi & Số dư ---
         double balance = budget - totalExpense;
+
+        txtTotalExpense.setText("Tổng chi tiêu: " + moneyFormat.format(totalExpense));
         txtBalance.setText("Số dư: " + moneyFormat.format(balance));
 
-        // --- BƯỚC 4: Hiển thị List Giao dịch (Chi tiết) ---
-        // Truyền null cho listener vì ở màn hình báo cáo không cần click sửa xóa
+        // --- BƯỚC 3: Hiển thị List Giao dịch (Chi tiết) ---
+        // Sử dụng dữ liệu filteredList đã truy vấn trực tiếp từ DB
         TransactionAdapter tranAdapter = new TransactionAdapter(filteredList, null);
         recyclerTransaction.setAdapter(tranAdapter);
 
-        // --- BƯỚC 5: Hiển thị List Danh mục (Tổng hợp) ---
+        // --- BƯỚC 4: Hiển thị List Danh mục (Tổng hợp) ---
+        // Chuyển categoryMap sang list CategoryReport
         List<CategoryReport> categoryReports = new ArrayList<>();
         for (Map.Entry<String, Double> entry : categoryMap.entrySet()) {
+            // Giả định CategoryReport có constructor(String categoryName, double totalAmount)
             categoryReports.add(new CategoryReport(entry.getKey(), entry.getValue()));
         }
 
+        // Giả định CategoryReportAdapter tồn tại
         CategoryReportAdapter catAdapter = new CategoryReportAdapter(categoryReports);
         recyclerCategory.setAdapter(catAdapter);
     }

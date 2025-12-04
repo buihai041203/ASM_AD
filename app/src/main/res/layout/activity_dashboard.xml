@@ -115,14 +115,14 @@
             <Spinner
                 android:id="@+id/spMonthPie"
                 android:layout_width="80dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:background="#FFFFFF"
                 android:padding="4dp" />
 
             <Spinner
                 android:id="@+id/spYearPie"
                 android:layout_width="90dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="8dp"
                 android:background="#FFFFFF"
                 android:padding="4dp" />
@@ -155,14 +155,14 @@
             <Spinner
                 android:id="@+id/spDay"
                 android:layout_width="70dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:background="#FFFFFF"
                 android:padding="4dp" />
 
             <Spinner
                 android:id="@+id/spMonth"
                 android:layout_width="70dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="4dp"
                 android:background="#FFFFFF"
                 android:padding="4dp" />
@@ -170,7 +170,7 @@
             <Spinner
                 android:id="@+id/spYear"
                 android:layout_width="80dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_marginStart="4dp"
                 android:background="#FFFFFF"
                 android:padding="4dp" />
