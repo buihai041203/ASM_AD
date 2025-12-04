@@ -118,7 +118,7 @@ public class DashboardActivity extends AppCompatActivity {
         List<Float> amounts = new ArrayList<>();
 
         for (Transaction t : allTransactions) {
-            if (matchMonthYear(t.getDate(), month, year)) {
+            if (matchMonthYear(t.getDate(), month, year)) { // Sử dụng hàm đã điều chỉnh
                 int index = categories.indexOf(t.getCategory());
                 if (index >= 0) {
                     amounts.set(index, amounts.get(index) + (float) t.getAmount());
@@ -178,6 +178,7 @@ public class DashboardActivity extends AppCompatActivity {
         int m = (int) spMonth.getSelectedItem();
         int y = (int) spYear.getSelectedItem();
 
+        // dateStr có định dạng dd/MM/yyyy để so sánh với t.getDate()
         String dateStr = String.format("%02d/%02d/%04d", d, m, y);
 
         List<Transaction> filtered = new ArrayList<>();

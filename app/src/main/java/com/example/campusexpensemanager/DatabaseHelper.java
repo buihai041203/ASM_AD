@@ -180,6 +180,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+
+
     // Cập nhật số tiền còn lại mỗi khi có thay đổi chi tiêu
     public void capNhatSoTienConLai(String thangNam) {
         SQLiteDatabase db = this.getWritableDatabase();
