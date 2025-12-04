@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <item
+        android:id="@+id/menu_home"
+        android:icon="@drawable/home"
+        app:itemIconTint="@null"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/menu_expenses"
+        android:icon="@drawable/expenses"
+        app:itemIconTint="@null"
+        android:title="Incurred costs" />
+
+    <item
+        android:id="@+id/menu_fixdexpense"
+        android:icon="@drawable/fixedexpense"
+        app:itemIconTint="@null"
+        android:title="Fixed costs" />
+
+    <item
+        android:id="@+id/menu_settings"
+        android:icon="@drawable/settings"
+        app:itemIconTint="@null"
+        android:title="Settings" />
+
+</menu>

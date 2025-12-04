@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group  android:checkableBehavior="single">
+        <item
+            android:id="@+id/menu_home"
+            android:title="Home"
+            android:icon="@drawable/home" />
+        <item
+            android:title="Expenses"
+            android:id="@+id/menu_expenses"
+            android:icon="@drawable/expense"/>
+        <item
+            android:title="Budget"
+            android:id="@+id/menu_budget"
+            android:icon="@drawable/fixedexpense"/>
+        <item
+            android:title="Profile"
+            android:id="@+id/menu_profile"
+            android:icon="@drawable/profile"/>
+    </group>
+    <item android:title="Others">
+        <menu>
+            <item
+                android:title="Logout"
+                android:id="@+id/menu_logout"
+                android:icon="@drawable/logout_icon"/>
+        </menu>
+    </item>
+</menu>
