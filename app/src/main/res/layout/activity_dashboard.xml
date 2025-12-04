@@ -2,139 +2,186 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="#0F153E"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- USERNAME -->
         <TextView
             android:id="@+id/tvUsername"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hello, Username"
-            android:textSize="22sp"
-            android:padding="8dp"
-            android:textStyle="bold"
-            android:textColor="#000000" />
-
-        <!-- CHI PHÍ BAN ĐẦU -->
-        <TextView
-            android:id="@+id/tvInitialBudget"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chi phí ban đầu: 0 đ"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#444444"
-            android:padding="8dp" />
-
-        <!-- TỔNG CHI & SỐ DƯ -->
-        <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:weightSum="2"
-            android:padding="8dp">
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="Hello, User"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_spinner"
+            android:backgroundTint="#1B2B83"
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
-                android:id="@+id/tvTotalExpense"
-                android:layout_width="0dp"
+                android:id="@+id/tvInitialBudget"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Tổng chi tiêu: 0 đ"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#D32F2F" />
+                android:text="Chi phí ban đầu: 0 đ"
+                android:textColor="#B0BEC5"
+                android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/tvBalance"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:text="Số dư: 0 đ"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#388E3C" />
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tổng chi tiêu"
+                        android:textColor="#EF9A9A"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvTotalExpense"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 đ"
+                        android:textColor="#FF5252"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Số dư hiện tại"
+                        android:textColor="#A5D6A7"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvBalance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 đ"
+                        android:textColor="#69F0AE"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- CHỌN THÁNG/NĂM CHO PIECHART -->
         <LinearLayout
             android:id="@+id/monthYearFilterLayout"
-            android:orientation="horizontal"
-            android:gravity="end"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="12dp"
-            android:weightSum="2">
+            android:layout_marginTop="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Biểu đồ thống kê"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <Spinner
                 android:id="@+id/spMonthPie"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content" />
+                android:layout_width="80dp"
+                android:layout_height="48dp"
+                android:background="#FFFFFF"
+                android:padding="4dp" />
 
             <Spinner
                 android:id="@+id/spYearPie"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp" />
+                android:layout_width="90dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="#FFFFFF"
+                android:padding="4dp" />
         </LinearLayout>
 
-        <!-- PIE CHART -->
         <com.github.mikephil.charting.charts.PieChart
             android:id="@+id/pieChart"
             android:layout_width="match_parent"
-            android:layout_height="260dp"
+            android:layout_height="280dp"
             android:layout_marginTop="12dp" />
 
-        <!-- TIÊU ĐỀ CHI TIÊU TRONG NGÀY -->
         <TextView
             android:id="@+id/tvDailyExpenseTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Chi tiêu trong ngày"
+            android:layout_marginTop="24dp"
+            android:text="Chi tiết giao dịch"
+            android:textColor="#FFFFFF"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:paddingTop="20dp" />
+            android:textStyle="bold" />
 
-        <!-- CHỌN NGÀY (DƯỚI PIECHART) -->
         <LinearLayout
             android:id="@+id/dateFilterLayout"
-            android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:gravity="end"
-            android:padding="8dp"
-            android:weightSum="3">
+            android:orientation="horizontal">
 
             <Spinner
                 android:id="@+id/spDay"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content" />
+                android:layout_width="70dp"
+                android:layout_height="48dp"
+                android:background="#FFFFFF"
+                android:padding="4dp" />
 
             <Spinner
                 android:id="@+id/spMonth"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp" />
+                android:layout_width="70dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="#FFFFFF"
+                android:padding="4dp" />
 
             <Spinner
                 android:id="@+id/spYear"
-                android:layout_width="90dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp" />
+                android:layout_width="80dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="#FFFFFF"
+                android:padding="4dp" />
         </LinearLayout>
 
-        <!-- DANH SÁCH CHI TIÊU TRONG NGÀY -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvDailyExpenses"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp" />
+            android:layout_marginTop="12dp"
+            android:nestedScrollingEnabled="false" />
 
     </LinearLayout>
-
 </ScrollView>
