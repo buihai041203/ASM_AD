@@ -3,8 +3,8 @@
 
     <item
         android:id="@+id/menu_home"
-        android:title="Home"
-        android:icon="@android:drawable/ic_menu_view" />
+        android:icon="@drawable/icon_home"
+        android:title="Home" />
 
     <item
         android:id="@+id/menu_expense"

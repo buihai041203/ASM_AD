@@ -35,17 +35,17 @@ public class LoginActivity extends AppCompatActivity {
             String pass = etPassword.getText().toString();
 
             if (user.isEmpty() || pass.isEmpty()) {
-                Toast.makeText(this, "Không được để trống!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Do not leave it blank!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             boolean success = userDAO.login(user, pass) != null;
 
             if (success) {
-                Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(LoginActivity.this, HomeActivity.class));
             } else {
-                Toast.makeText(this, "Sai thông tin đăng nhập!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Incorrect login information!", Toast.LENGTH_SHORT).show();
             }
         });
 
