@@ -20,8 +20,8 @@
 
     <ListView
         android:id="@+id/lvFixedCosts"
-        android:layout_width="352dp"
-        android:layout_height="559dp"
+        android:layout_width="408dp"
+        android:layout_height="555dp"
         android:layout_marginTop="8dp"
         android:divider="@android:color/transparent"
         android:dividerHeight="10dp"
