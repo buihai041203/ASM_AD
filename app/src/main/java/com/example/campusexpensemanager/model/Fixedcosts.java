@@ -1,14 +1,14 @@
 package com.example.campusexpensemanager.model;
 
-public class Budget {
+public class Fixedcosts {
     private int id;
     private String thangNam;        // yyyy-MM
     private double soTienDuKien;
     private double soTienConLai;
 
-    public Budget() {}
+    public Fixedcosts() {}
 
-    public Budget(String thangNam, double soTienDuKien, double soTienConLai) {
+    public Fixedcosts(String thangNam, double soTienDuKien, double soTienConLai) {
         this.thangNam = thangNam;
         this.soTienDuKien = soTienDuKien;
         this.soTienConLai = soTienConLai;

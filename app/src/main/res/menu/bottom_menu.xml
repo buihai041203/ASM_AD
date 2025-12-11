@@ -9,16 +9,16 @@
     <item
         android:id="@+id/menu_expense"
         android:title="Expense"
-        android:icon="@android:drawable/ic_menu_edit" />
+        android:icon="@drawable/expense" />
 
     <item
-        android:id="@+id/menu_budget"
-        android:title="Budget"
-        android:icon="@android:drawable/ic_menu_agenda" />
+        android:id="@+id/menu_fixedcosts"
+        android:title="Fixecosts"
+        android:icon="@drawable/fixedcosts_com" />
 
     <item
         android:id="@+id/menu_settings"
         android:title="Settings"
-        android:icon="@android:drawable/ic_menu_preferences" />
+        android:icon="@drawable/setting" />
 
 </menu>

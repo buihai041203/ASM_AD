@@ -5,7 +5,7 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
 
-import com.example.campusexpensemanager.Fragment.BudgetFragment;
+import com.example.campusexpensemanager.Fragment.FixedcostsFragment;
 import com.example.campusexpensemanager.Fragment.ExpenseFragment;
 import com.example.campusexpensemanager.Fragment.HomeFragment;
 import com.example.campusexpensemanager.Fragment.SettingsFragment;
@@ -35,8 +35,8 @@ public class HomeActivity extends AppCompatActivity {
                 selectedFragment = new HomeFragment();
             } else if (id == R.id.menu_expense) {
                 selectedFragment = new ExpenseFragment();
-            } else if (id == R.id.menu_budget) {
-                selectedFragment = new BudgetFragment();
+            } else if (id == R.id.menu_fixedcosts) {
+                selectedFragment = new FixedcostsFragment();
             } else if (id == R.id.menu_settings) {
                 selectedFragment = new SettingsFragment();
             } else {
