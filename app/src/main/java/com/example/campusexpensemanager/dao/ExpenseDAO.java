@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import com.example.campusexpensemanager.DatabaseHelper;
 import com.example.campusexpensemanager.model.Expense;
 import com.example.campusexpensemanager.model.ExpenseCategory;
+import com.example.campusexpensemanager.model.ExpenseCategoryTotal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +83,30 @@ public class ExpenseDAO {
         }
         c.close();
         return total;
+    }
+
+    // Lấy tổng chi tiêu theo từng danh mục trong tháng
+    public List<ExpenseCategoryTotal> getCategoryTotalsByMonth(String thangNam) {
+        List<ExpenseCategoryTotal> totals = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        // Truy vấn GROUP BY để tính tổng số tiền (SUM) theo từng loại chi phí (LOAI_TEN)
+        String query = "SELECT lc." + DatabaseHelper.LOAI_TEN + ", SUM(ct." + DatabaseHelper.CT_SO_TIEN + ") AS TotalAmount " +
+                "FROM " + DatabaseHelper.TABLE_CHI_TIEU + " ct " +
+                "JOIN " + DatabaseHelper.TABLE_LOAI_CHI_PHI + " lc ON ct." + DatabaseHelper.CT_LOAI_ID + " = lc." + DatabaseHelper.LOAI_ID +
+                " WHERE ct." + DatabaseHelper.CT_THANG_NAM + " = ? " +
+                " GROUP BY lc." + DatabaseHelper.LOAI_TEN +
+                " ORDER BY TotalAmount DESC";
+
+        Cursor c = db.rawQuery(query, new String[]{thangNam});
+
+        while (c.moveToNext()) {
+            String categoryName = c.getString(c.getColumnIndexOrThrow(DatabaseHelper.LOAI_TEN));
+            double totalAmount = c.getDouble(c.getColumnIndexOrThrow("TotalAmount"));
+            totals.add(new ExpenseCategoryTotal(categoryName, totalAmount));
+        }
+        c.close();
+        return totals;
     }
 
     // Xóa, sửa… (các bạn thêm sau nếu cần)

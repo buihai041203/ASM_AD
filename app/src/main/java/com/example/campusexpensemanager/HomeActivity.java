@@ -62,4 +62,5 @@ public class HomeActivity extends AppCompatActivity {
             bottomNav.setSelectedItemId(R.id.menu_home);
         }
     }
+
 }
