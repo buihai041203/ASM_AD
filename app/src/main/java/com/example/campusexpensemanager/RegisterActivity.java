@@ -11,17 +11,18 @@ import com.example.campusexpensemanager.dao.UserDAO;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    EditText etRegUsername, etRegPassword;
-    Button btnRegister;
-    TextView tvBackLogin;
+    private EditText etRegUsername, etRegPassword;
+    private Button btnRegister;
+    private TextView tvBackLogin;
 
-    UserDAO userDAO;
+    private UserDAO userDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        // Ánh xạ view
         etRegUsername = findViewById(R.id.etRegUsername);
         etRegPassword = findViewById(R.id.etRegPassword);
         btnRegister = findViewById(R.id.btnRegister);
@@ -29,27 +30,34 @@ public class RegisterActivity extends AppCompatActivity {
 
         userDAO = new UserDAO(this);
 
-        btnRegister.setOnClickListener(v -> {
-            String user = etRegUsername.getText().toString();
-            String pass = etRegPassword.getText().toString();
+        // Sự kiện đăng ký
+        btnRegister.setOnClickListener(v -> registerUser());
 
-            if (user.isEmpty() || pass.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập đầy đủ!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            boolean success = userDAO.register(user, user, pass);
-
-            if (success) {
-                Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
-            } else {
-                Toast.makeText(this, "Lỗi! Tên đăng nhập đã tồn tại", Toast.LENGTH_SHORT).show();
-            }
-        });
-
+        // Sự kiện quay lại login
         tvBackLogin.setOnClickListener(v ->
                 startActivity(new Intent(RegisterActivity.this, LoginActivity.class))
         );
+    }
+
+    private void registerUser() {
+        String username = etRegUsername.getText().toString().trim();
+        String password = etRegPassword.getText().toString().trim();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in all the information!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Gọi UserDAO để đăng ký
+        boolean success = userDAO.register(username, username, password); // username dùng làm email tạm
+
+        if (success) {
+            Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show();
+            // Chuyển về LoginActivity
+            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+            finish(); // Kết thúc RegisterActivity
+        } else {
+            Toast.makeText(this, "Error! The username already exists.", Toast.LENGTH_SHORT).show();
+        }
     }
 }
