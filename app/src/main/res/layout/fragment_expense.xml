@@ -1,160 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5"
-    android:clickable="true"
-    android:focusable="true">
+    android:padding="16dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/headerLayout"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#FFFFFF"
-        android:elevation="4dp"
-        app:layout_constraintTop_toTopOf="parent">
+    <TextView
+        android:id="@+id/tvHeaderExpense"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lịch sử chi tiêu"
+        android:textColor="#333333"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/btnBackExpense"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="16dp"
-            android:background="@android:color/transparent"
-            android:drawableStart="@android:drawable/ic_menu_revert"
-            android:drawableTint="#333333"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="New Expense"
-            android:textColor="#333333"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddExpense"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#3F51B5"
+        android:contentDescription="Thêm chi tiêu"
+        android:src="@android:drawable/ic_input_add"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerLayout">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.461"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.858" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+    <ListView
+        android:id="@+id/listViewHistory"
+        android:layout_width="388dp"
+        android:layout_height="482dp"
+        android:layout_marginTop="16dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvHeaderExpense"
+        app:layout_constraintVertical_bias="0.0" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Expense cost"
-                android:textColor="#666666"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/edtExpenseMoney"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@android:color/transparent"
-                android:hint="0"
-                android:inputType="numberDecimal"
-                android:padding="10dp"
-                android:textColor="#E53935"
-                android:textSize="32sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E0E0E0" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Expense list"
-                android:textColor="#333333"
-                android:textStyle="bold" />
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#FFFFFF"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="0dp">
-
-                <Spinner
-                    android:id="@+id/spinner_budget_selection"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:paddingStart="8dp" />
-            </androidx.cardview.widget.CardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Expense Name"
-                android:textColor="#333333"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/edtExpenseName"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input_field"
-                android:hint="Ví dụ: Ăn trưa, Đổ xăng..."
-                android:paddingHorizontal="12dp"
-                android:inputType="textCapSentences"
-                android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="Note"
-                android:textColor="#333333"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/edtBudgetDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input_field"
-                android:gravity="top"
-                android:hint="Chi tiết..."
-                android:inputType="textMultiLine"
-                android:minLines="4"
-                android:padding="12dp"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/btnSave"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="40dp"
-                android:layout_marginBottom="20dp"
-                android:backgroundTint="#3F51B5"
-                android:text="Save"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:cornerRadius="10dp" />
-
-        </LinearLayout>
-    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
