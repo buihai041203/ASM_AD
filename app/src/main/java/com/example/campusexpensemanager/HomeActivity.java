@@ -22,13 +22,14 @@ public class HomeActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottomNav);
 
-        // Hiển thị HomeFragment đầu tiên
-        loadFragment(new HomeFragment());
+        // Hiển thị HomeFragment đầu tiên khi app mới mở
+        if (savedInstanceState == null) {
+            loadFragment(new HomeFragment());
+        }
 
         // Xử lý sự kiện Bottom Navigation
         bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment;
-
+            Fragment selectedFragment = null;
             int id = item.getItemId();
 
             if (id == R.id.menu_home) {
@@ -39,11 +40,11 @@ public class HomeActivity extends AppCompatActivity {
                 selectedFragment = new FixedcostsFragment();
             } else if (id == R.id.menu_settings) {
                 selectedFragment = new SettingsFragment();
-            } else {
-                selectedFragment = new HomeFragment();
             }
 
-            loadFragment(selectedFragment);
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment);
+            }
             return true;
         });
     }
@@ -53,5 +54,14 @@ public class HomeActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.containerHome, fragment)
                 .commit();
+    }
+
+    // ==================================================================
+    // HÀM ĐIỀU HƯỚNG VỀ HOME (Được gọi từ các Fragment con)
+    // ==================================================================
+    public void navigateToHome() {
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.menu_home);
+        }
     }
 }
