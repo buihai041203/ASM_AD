@@ -10,12 +10,7 @@
         android:id="@+id/containerHome"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" >
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
-            android:layout_height="454dp" />
-    </FrameLayout>
+        android:layout_weight="1" />
 
     <!-- menu dưới cùng -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

@@ -2,9 +2,7 @@ package com.example.campusexpensemanager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-
 import android.os.Bundle;
-
 import com.example.campusexpensemanager.Fragment.FixedcostsFragment;
 import com.example.campusexpensemanager.Fragment.ExpenseFragment;
 import com.example.campusexpensemanager.Fragment.HomeFragment;
@@ -22,17 +20,17 @@ public class HomeActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottomNav);
 
-        // Hiển thị HomeFragment đầu tiên khi app mới mở
+        // Load HomeFragment khi mở app
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
         }
 
-        // Xử lý sự kiện Bottom Navigation
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
             int id = item.getItemId();
 
-            if (id == R.id.menu_home) {
+            // --- QUAN TRỌNG: SỬA CÁC ID DƯỚI ĐÂY CHO KHỚP VỚI FILE MENU CỦA BẠN ---
+            if (id == R.id.menu_home) { // Nếu menu của bạn là nav_home, hãy sửa thành R.id.nav_home
                 selectedFragment = new HomeFragment();
             } else if (id == R.id.menu_expense) {
                 selectedFragment = new ExpenseFragment();
@@ -41,6 +39,7 @@ public class HomeActivity extends AppCompatActivity {
             } else if (id == R.id.menu_settings) {
                 selectedFragment = new SettingsFragment();
             }
+            // -----------------------------------------------------------------------
 
             if (selectedFragment != null) {
                 loadFragment(selectedFragment);
@@ -56,11 +55,10 @@ public class HomeActivity extends AppCompatActivity {
                 .commit();
     }
 
-    // ==================================================================
-    // HÀM ĐIỀU HƯỚNG VỀ HOME (Được gọi từ các Fragment con)
-    // ==================================================================
+    // Hàm cho phép Fragment con gọi để quay về Home
     public void navigateToHome() {
         if (bottomNav != null) {
+            // SỬA ID NÀY CHO KHỚP VỚI ID MENU TRANG CHỦ CỦA BẠN
             bottomNav.setSelectedItemId(R.id.menu_home);
         }
     }
