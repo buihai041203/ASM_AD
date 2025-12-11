@@ -1,8 +1,9 @@
 package com.example.campusexpensemanager.Fragment;
 
 import android.app.AlertDialog;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.content.Context; // Cần thiết cho SharedPreferences
+import android.content.Intent; // Cần thiết cho chuyển hướng
+import android.content.SharedPreferences; // Cần thiết cho lưu/xóa session
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,21 +13,18 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.example.campusexpensemanager.DatabaseHelper;
 import com.example.campusexpensemanager.R;
 import com.example.campusexpensemanager.dao.BudgetDAO;
 import com.example.campusexpensemanager.model.Fixedcosts;
+import com.example.campusexpensemanager.LoginActivity; // Sử dụng LoginActivity làm trang đích đăng xuất
 
 import java.text.DecimalFormat;
-import java.util.Locale;
 
 public class SettingsFragment extends Fragment {
 
     private TextView tvBudgetCurrent, tvBudgetRemaining;
-    private Button btnSetBudget;
+    private Button btnSetBudget, btnLogout; // Đã khai báo btnLogout
     private BudgetDAO budgetDAO;
     private DecimalFormat df = new DecimalFormat("#,### đ");
 
@@ -35,20 +33,64 @@ public class SettingsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
         // Khởi tạo DAO
-        budgetDAO = new BudgetDAO(getContext());
+        // Sử dụng requireContext() để đảm bảo Context hợp lệ
+        budgetDAO = new BudgetDAO(requireContext());
 
-        // Ánh xạ các thành phần Ngân sách (Giả định bạn đã thêm chúng vào fragment_settings.xml)
-        // Nếu chưa có, bạn cần thêm 2 TextView và 1 Button vào fragment_settings.xml
+        // Ánh xạ các thành phần Ngân sách
         tvBudgetCurrent = view.findViewById(R.id.tvBudgetCurrent);
         tvBudgetRemaining = view.findViewById(R.id.tvBudgetRemaining);
         btnSetBudget = view.findViewById(R.id.btnSetBudget);
+
+        // Ánh xạ nút Đăng xuất (Khớp với ID trong XML)
+        btnLogout = view.findViewById(R.id.btnLogout);
 
         loadCurrentBudget();
 
         btnSetBudget.setOnClickListener(v -> showSetBudgetDialog());
 
+        // --- LOGIC XỬ LÝ SỰ KIỆN ĐĂNG XUẤT ---
+        btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
+
         return view;
     }
+
+    // --- LOGIC ĐĂNG XUẤT ---
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(requireContext()) // Sử dụng requireContext()
+                .setTitle("Xác nhận Đăng xuất")
+                .setMessage("Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?")
+                .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                    performLogout();
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void performLogout() {
+        if (getActivity() != null) {
+            // 1. Xóa thông tin đăng nhập trong SharedPreferences ("UserPrefs" và KEY "USERNAME")
+            SharedPreferences prefs = getActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+
+            // Xóa key "USERNAME" đã lưu khi đăng nhập
+            editor.remove("USERNAME");
+
+            editor.apply(); // Lưu thay đổi
+
+            // 2. Chuyển hướng đến LoginActivity
+            // Thay vì MainActivity, chuyển về LoginActivity để người dùng đăng nhập lại
+            Intent intent = new Intent(getActivity(), LoginActivity.class);
+
+            // Cờ quan trọng: Xóa tất cả Activity cũ trong stack
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+
+            // 3. Kết thúc Activity chứa Fragment (ví dụ: HomeActivity)
+            getActivity().finish();
+        }
+    }
+    // --- KẾT THÚC LOGIC ĐĂNG XUẤT ---
+
 
     // 1. Tải và hiển thị Ngân sách tháng hiện tại
     private void loadCurrentBudget() {
@@ -60,7 +102,6 @@ public class SettingsFragment extends Fragment {
 
             tvBudgetCurrent.setText("Ngân sách dự kiến: " + duKien);
 
-            // Đổi màu sắc số dư còn lại để dễ theo dõi
             tvBudgetRemaining.setText("Số tiền còn lại: " + conLai);
             if (currentBudget.getSoTienConLai() < 0) {
                 tvBudgetRemaining.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
@@ -72,20 +113,18 @@ public class SettingsFragment extends Fragment {
 
     // 2. Hiển thị hộp thoại để người dùng nhập/cập nhật Ngân sách
     private void showSetBudgetDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext()); // Sử dụng requireContext()
         builder.setTitle("Thiết lập Ngân sách Tháng");
 
-        // Tạo giao diện nhập liệu
-        LinearLayout layout = new LinearLayout(getContext());
+        LinearLayout layout = new LinearLayout(requireContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 20);
 
-        final EditText edtAmount = new EditText(getContext());
+        final EditText edtAmount = new EditText(requireContext());
         edtAmount.setHint("Nhập số tiền Ngân sách dự kiến");
         edtAmount.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         layout.addView(edtAmount);
 
-        // Lấy Ngân sách cũ để hiển thị trong EditText (nếu có)
         Fixedcosts currentBudget = budgetDAO.getOrCreateCurrentBudget();
         if (currentBudget != null && currentBudget.getSoTienDuKien() > 0) {
             edtAmount.setText(String.valueOf((int) currentBudget.getSoTienDuKien()));
@@ -99,7 +138,7 @@ public class SettingsFragment extends Fragment {
                 double newAmount = Double.parseDouble(amountStr);
                 updateBudget(newAmount);
             } else {
-                Toast.makeText(getContext(), "Vui lòng nhập số tiền!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Vui lòng nhập số tiền!", Toast.LENGTH_SHORT).show(); // Sử dụng requireContext()
             }
         });
 
@@ -112,14 +151,13 @@ public class SettingsFragment extends Fragment {
         String currentMonth = budgetDAO.getOrCreateCurrentBudget().getThangNam();
 
         if (budgetDAO.updateBudget(currentMonth, newAmount)) {
-            Toast.makeText(getContext(), "Ngân sách tháng đã được cập nhật!", Toast.LENGTH_SHORT).show();
-            loadCurrentBudget(); // Tải lại để hiển thị số dư mới
+            Toast.makeText(requireContext(), "Ngân sách tháng đã được cập nhật!", Toast.LENGTH_SHORT).show(); // Sử dụng requireContext()
+            loadCurrentBudget();
         } else {
-            Toast.makeText(getContext(), "Lỗi khi cập nhật Ngân sách!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Lỗi khi cập nhật Ngân sách!", Toast.LENGTH_SHORT).show(); // Sử dụng requireContext()
         }
     }
 
-    // Khi Fragment được hiển thị lại, tải lại ngân sách để đảm bảo dữ liệu mới nhất
     @Override
     public void onResume() {
         super.onResume();

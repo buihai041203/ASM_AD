@@ -28,19 +28,31 @@ public class UserDAO {
     // Đăng nhập
     public User login(String email, String matKhau) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_USER +
-                        " WHERE " + DatabaseHelper.USER_EMAIL + "=? AND " + DatabaseHelper.USER_MAT_KHAU + "=?",
-                new String[]{email, matKhau});
-        if (c.moveToFirst()) {
-            User user = new User();
-            user.setUserId(c.getInt(c.getColumnIndexOrThrow(DatabaseHelper.USER_ID)));
-            user.setHoTen(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.USER_HO_TEN)));
-            user.setEmail(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.USER_EMAIL)));
-            c.close();
-            return user;
+        Cursor c = null;
+        User user = null; // Khởi tạo User
+
+        try {
+            c = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_USER +
+                            " WHERE " + DatabaseHelper.USER_EMAIL + "=? AND " + DatabaseHelper.USER_MAT_KHAU + "=?",
+                    new String[]{email, matKhau});
+
+            if (c.moveToFirst()) {
+                user = new User();
+                // Đảm bảo lấy các chỉ mục cột an toàn hơn nếu bạn không dùng getColumnIndexOrThrow
+                // Hoặc sử dụng getColumnIndexOrThrow như bạn đã làm, nhưng đảm bảo User model có setEmail()
+                user.setUserId(c.getInt(c.getColumnIndexOrThrow(DatabaseHelper.USER_ID)));
+                user.setHoTen(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.USER_HO_TEN)));
+                user.setEmail(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.USER_EMAIL))); // Lấy EMAIL
+            }
+        } catch (Exception e) {
+            // Xử lý ngoại lệ DB
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+            db.close(); // ĐÓNG KẾT NỐI DB
         }
-        c.close();
-        return null;
+        return user; // Trả về đối tượng User (chứa email)
     }
 
 }
