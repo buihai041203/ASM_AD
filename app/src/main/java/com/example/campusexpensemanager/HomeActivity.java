@@ -22,38 +22,36 @@ public class HomeActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottomNav);
 
-        // Hiển thị fragment mặc định
+        // Hiển thị HomeFragment đầu tiên
         loadFragment(new HomeFragment());
 
+        // Xử lý sự kiện Bottom Navigation
         bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selected;
+            Fragment selectedFragment;
 
-            switch (item.getItemId()) {
-                case R.id.menu_expense:
-                    selected = new ExpenseFragment();
-                    break;
+            int id = item.getItemId();
 
-                case R.id.menu_budget:
-                    selected = new BudgetFragment();
-                    break;
-
-                case R.id.menu_settings:
-                    selected = new SettingsFragment();
-                    break;
-
-                default:
-                    selected = new HomeFragment();
+            if (id == R.id.menu_home) {
+                selectedFragment = new HomeFragment();
+            } else if (id == R.id.menu_expense) {
+                selectedFragment = new ExpenseFragment();
+            } else if (id == R.id.menu_budget) {
+                selectedFragment = new BudgetFragment();
+            } else if (id == R.id.menu_settings) {
+                selectedFragment = new SettingsFragment();
+            } else {
+                selectedFragment = new HomeFragment();
             }
 
-            loadFragment(selected);
+            loadFragment(selectedFragment);
             return true;
         });
     }
 
-    private void loadFragment(Fragment f) {
+    private void loadFragment(Fragment fragment) {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.containerHome, f)
+                .replace(R.id.containerHome, fragment)
                 .commit();
     }
 }
