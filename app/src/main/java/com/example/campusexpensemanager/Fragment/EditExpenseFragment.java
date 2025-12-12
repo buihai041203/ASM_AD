@@ -19,11 +19,8 @@ import androidx.fragment.app.Fragment;
 import com.example.campusexpensemanager.DatabaseHelper;
 import com.example.campusexpensemanager.HomeActivity;
 import com.example.campusexpensemanager.R;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class EditExpenseFragment extends Fragment {
 
@@ -55,7 +52,8 @@ public class EditExpenseFragment extends Fragment {
 
         dbHelper = new DatabaseHelper(getContext());
 
-        loadCategories();
+        // Gọi hàm load category đã được lọc
+        loadCategoriesFiltered();
 
         // Lấy ID được gửi từ Home
         if (getArguments() != null) {
@@ -78,10 +76,16 @@ public class EditExpenseFragment extends Fragment {
         }
     }
 
-    private void loadCategories() {
+    // --- ĐOẠN CODE ĐÃ ĐƯỢC CHỈNH SỬA ---
+    private void loadCategoriesFiltered() {
         List<CategoryItem> categories = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(DatabaseHelper.TABLE_LOAI_CHI_PHI, null, null, null, null, null, null);
+
+        // Lọc bỏ 'Chi phí cố định hàng tháng' bằng mệnh đề WHERE !=
+        Cursor cursor = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_LOAI_CHI_PHI +
+                        " WHERE " + DatabaseHelper.LOAI_TEN + " != ?",
+                new String[]{"Chi phí cố định hàng tháng"});
+
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 categories.add(new CategoryItem(
@@ -94,6 +98,7 @@ public class EditExpenseFragment extends Fragment {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(adapter);
     }
+    // -----------------------------------
 
     private void loadExpenseData(int id) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -105,7 +110,7 @@ public class EditExpenseFragment extends Fragment {
 
             edtAmount.setText(String.valueOf((int) amount));
 
-            // Tách tên và mô tả (Giả sử định dạng lưu là "Tên (Mô tả)")
+            // Tách tên và mô tả
             if (fullNote.contains(" (")) {
                 int splitIndex = fullNote.indexOf(" (");
                 edtName.setText(fullNote.substring(0, splitIndex));
@@ -118,7 +123,9 @@ public class EditExpenseFragment extends Fragment {
                 edtName.setText(fullNote);
             }
 
-            // Set Spinner
+            // Set Spinner Selection
+            // Lưu ý: Nếu khoản chi này TRƯỚC ĐÓ là "Chi phí cố định", vòng lặp này sẽ không tìm thấy ID
+            // và Spinner sẽ mặc định chọn mục đầu tiên (vì mục Cố định đã bị ẩn khỏi adapter).
             ArrayAdapter<CategoryItem> adapter = (ArrayAdapter<CategoryItem>) spinnerCategory.getAdapter();
             for (int i = 0; i < adapter.getCount(); i++) {
                 if (adapter.getItem(i).id == catId) {
@@ -154,13 +161,16 @@ public class EditExpenseFragment extends Fragment {
                 ContentValues values = new ContentValues();
                 values.put(DatabaseHelper.CT_SO_TIEN, newAmount);
                 values.put(DatabaseHelper.CT_GHI_CHU, finalNote);
+
+                // --- SỬA LỖI TẠI ĐÂY ---
+                // Thay TABLE_LOAI_CHI_PHI bằng CT_LOAI_ID
                 values.put(DatabaseHelper.CT_LOAI_ID, selectedCat.id);
+                // -----------------------
+
                 db.update(DatabaseHelper.TABLE_CHI_TIEU, values, DatabaseHelper.CT_ID + "=?", new String[]{String.valueOf(expenseId)});
 
-                // 3. Update Ngân Sách (Cộng lại tiền cũ, trừ tiền mới)
-                // Tiền còn lại = Hiện tại + Tiền cũ - Tiền mới
-                // (Logic: coi như chưa tiêu khoản cũ, rồi tiêu khoản mới)
-                double diff = oldAmount - newAmount; // Nếu dương (tiêu ít hơn) -> Ngân sách tăng. Nếu âm (tiêu nhiều hơn) -> Ngân sách giảm.
+                // 3. Update Ngân Sách
+                double diff = oldAmount - newAmount;
 
                 db.execSQL("UPDATE " + DatabaseHelper.TABLE_NGAN_SACH +
                         " SET " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " = " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " + ?" +
@@ -192,16 +202,13 @@ public class EditExpenseFragment extends Fragment {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.beginTransaction();
         try {
-            // 1. Lấy thông tin cũ để hoàn tiền
             Cursor c = db.rawQuery("SELECT " + DatabaseHelper.CT_SO_TIEN + ", " + DatabaseHelper.CT_THANG_NAM + " FROM " + DatabaseHelper.TABLE_CHI_TIEU + " WHERE " + DatabaseHelper.CT_ID + "=?", new String[]{String.valueOf(expenseId)});
             if (c.moveToFirst()) {
                 double amount = c.getDouble(0);
                 String monthKey = c.getString(1);
 
-                // 2. Xóa khỏi bảng Chi Tiêu
                 db.delete(DatabaseHelper.TABLE_CHI_TIEU, DatabaseHelper.CT_ID + "=?", new String[]{String.valueOf(expenseId)});
 
-                // 3. Cộng lại tiền vào Ngân Sách
                 db.execSQL("UPDATE " + DatabaseHelper.TABLE_NGAN_SACH +
                         " SET " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " = " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " + ?" +
                         " WHERE " + DatabaseHelper.NS_THANG_NAM + " = ?", new Object[]{amount, monthKey});
