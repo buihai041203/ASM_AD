@@ -43,6 +43,14 @@
         android:layout_marginBottom="16dp"/>
 
     <Button
+        android:id="@+id/btnResetAllExpenseData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Xóa dữ liệu"
+        android:backgroundTint="#FF5722"
+        android:layout_marginTop="20dp" />
+
+    <Button
         android:id="@+id/btnLogout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
