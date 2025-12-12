@@ -2,15 +2,9 @@ package com.example.campusexpensemanager;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import android.util.Log; // Thêm import Log
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -51,8 +45,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String CT_NGAY = "ngay"; // YYYY-MM-DD
     public static final String CT_GHI_CHU = "ghi_chu"; // Note (Tên khoản chi)
     public static final String CT_THANG_NAM = "thang_nam"; // YYYY-MM
-    // Lưu ý: Trong AddTransactionActivity, bạn dùng cột description cho mô tả thêm,
-    // nhưng DB hiện tại chỉ có CT_GHI_CHU. Tôi sẽ gộp logic để không sửa DB.
 
     // Câu lệnh tạo bảng (GIỮ NGUYÊN)
     private static final String CREATE_USER = "CREATE TABLE " + TABLE_USER + " (" + USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + USER_HO_TEN + " TEXT NOT NULL, " + USER_EMAIL + " TEXT UNIQUE NOT NULL, " + USER_MAT_KHAU + " TEXT NOT NULL);";
@@ -65,6 +57,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DB_NAME, null, DB_VERSION);
     }
 
+    /**
+     * Phương thức nội bộ để thêm lại các loại chi phí mặc định.
+     */
+    private void addDefaultLoaiChiPhi(SQLiteDatabase db) {
+        // Xóa tất cả loại cũ trước khi thêm lại (đảm bảo không trùng UNIQUE)
+        db.execSQL("DELETE FROM " + TABLE_LOAI_CHI_PHI);
+
+        String[] loaiMacDinh = {"Chi phí cố định hàng tháng", "Ăn uống", "Xăng xe / Đi lại", "Mua sắm / Shopping", "Giải trí", "Y tế / Thuốc men", "Tiền thuê nhà", "Giáo dục", "Khác"};
+        for (String ten : loaiMacDinh) {
+            ContentValues cv = new ContentValues();
+            cv.put(LOAI_TEN, ten);
+            db.insert(TABLE_LOAI_CHI_PHI, null, cv);
+        }
+    }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_USER);
@@ -74,12 +81,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_CHI_TIEU);
 
         // Insert dữ liệu mẫu cho Loại Chi Phí
-        String[] loaiMacDinh = {"Chi phí cố định hàng tháng", "Ăn uống", "Xăng xe / Đi lại", "Mua sắm / Shopping", "Giải trí", "Y tế / Thuốc men", "Tiền thuê nhà", "Giáo dục", "Khác"};
-        for (String ten : loaiMacDinh) {
-            ContentValues cv = new ContentValues();
-            cv.put(LOAI_TEN, ten);
-            db.insert(TABLE_LOAI_CHI_PHI, null, cv);
-        }
+        addDefaultLoaiChiPhi(db);
     }
 
     @Override
@@ -92,6 +94,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    // =======================================================
+    // ======== PHƯƠNG THỨC MỚI: RESET TẤT CẢ CHI PHÍ ========
+    // =======================================================
 
+    /**
+     * Xóa toàn bộ Chi tiêu, Chi phí cố định và khôi phục Loại Chi phí về mặc định.
+     */
+    public void resetAllExpenseData() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+
+        try {
+            // 1. Xóa toàn bộ Chi tiêu (Chi phí về 0)
+            db.delete(TABLE_CHI_TIEU, null, null);
+
+            // 2. Xóa toàn bộ Chi phí cố định
+            db.delete(TABLE_CHI_PHI_CO_DINH, null, null);
+
+            // 3. Khôi phục Loại Chi phí về mặc định
+            addDefaultLoaiChiPhi(db);
+
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi reset toàn bộ dữ liệu chi phí: " + e.getMessage());
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+    }
 }
-
