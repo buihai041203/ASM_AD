@@ -3,6 +3,7 @@ package com.example.campusexpensemanager.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,13 +30,10 @@ import com.example.campusexpensemanager.model.ExpenseCategoryTotal;
 import com.example.campusexpensemanager.model.Fixedcosts;
 
 // Import cho PDF và Ghi File
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.graphics.pdf.PdfDocument;
 import android.graphics.Paint;
 import android.graphics.Canvas;
 import android.os.Environment;
-import androidx.core.content.ContextCompat;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -50,6 +48,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import android.Manifest; // Cần thiết cho Manifest.permission.POST_NOTIFICATIONS
+import android.content.pm.PackageManager; // Cần thiết cho PackageManager.PERMISSION_GRANTED
+import androidx.core.content.ContextCompat; // Cần thiết để kiểm tra quyền
+
 public class HomeFragment extends Fragment {
 
     // Khai báo các thành phần UI
@@ -63,24 +65,32 @@ public class HomeFragment extends Fragment {
     private DecimalFormat df = new DecimalFormat("#,### đ");
     private String currentMonth;
 
-    // Khai báo Launcher (Giữ lại cấu trúc hiện đại cho mục đích chung)
     private ActivityResultLauncher<String> requestPermissionLauncher;
+    private ActivityResultLauncher<String> requestNotificationPermissionLauncher; // <-- KHAI BÁO MỚI
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Khởi tạo ActivityResultLauncher (Sử dụng requireContext() an toàn hơn)
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
             if (isGranted) {
-                // Quyền được cấp (Dù không cần cho thư mục riêng, vẫn là logic mẫu)
-                Toast.makeText(requireContext(), "Quyền được cấp (Nếu cần).", Toast.LENGTH_SHORT).show();
                 createPdfReport();
             } else {
-                // Quyền bị từ chối
                 Toast.makeText(requireContext(), "Không thể có quyền ghi công cộng.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+    // Phương thức kiểm tra và yêu cầu quyền thông báo
+    private void checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                // Nếu chưa có quyền, yêu cầu quyền
+                if (requestNotificationPermissionLauncher != null) {
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                }
+            }
+        }
+        // Với API < 33, quyền thông báo được cấp mặc định.
     }
 
     @Override
@@ -98,7 +108,6 @@ public class HomeFragment extends Fragment {
         btnExportReport = view.findViewById(R.id.btnExportReport);
 
         // --- 2. KHỞI TẠO DAO & DỮ LIỆU ---
-        // Sử dụng requireContext() thay vì getContext() khi Fragment đã được attach
         expenseDAO = new ExpenseDAO(requireContext());
         budgetDAO = new BudgetDAO(requireContext());
         currentMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
@@ -107,6 +116,7 @@ public class HomeFragment extends Fragment {
         loadUserData();
         loadFinancialSummary();
         setupPieChart();
+        checkAndRequestNotificationPermission();
 
         // --- 4. THIẾT LẬP LISTENER ---
         btnExportReport.setOnClickListener(v -> checkPermissionAndExport());
@@ -121,27 +131,34 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadUserData() {
-        // 1. Khởi tạo SharedPreferences
-        // "UserPrefs" là tên file SharedPreferences (phải khớp với tên được dùng khi lưu dữ liệu)
         SharedPreferences prefs = requireActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-
-        // 2. Lấy tên người dùng
-        // Lấy giá trị từ key "USERNAME". Nếu không tìm thấy, sử dụng "Người dùng" làm giá trị mặc định.
         String email = prefs.getString("USERNAME", "Người dùng");
-
-        // 3. Hiển thị lên TextView
         tvWelcomeUser.setText("Xin chào, " + email);
     }
 
+    // =======================================================
+    // ======== PHƯƠNG THỨC SỬA ĐỔI: loadFinancialSummary ========
+    // =======================================================
     private void loadFinancialSummary() {
         Fixedcosts budget = budgetDAO.getOrCreateCurrentBudget();
-        double totalExpense = expenseDAO.getTotalByMonth(currentMonth);
 
-        double remaining = budget.getSoTienConLai();
+        // 1. Chi tiêu Biến đổi (thực tế đã chi từ bảng CHI_TIEU)
+        double variableExpense = expenseDAO.getTotalByMonth(currentMonth);
 
+        // 2. Chi phí Cố định (tổng các khoản phải chi)
+        double totalFixedCosts = budgetDAO.getTotalFixedCosts();
+
+        // 3. TÍNH TOÁN TỔNG CHI TIÊU THỰC TẾ (Đã chi + Phải chi)
+        double totalExpenseActual = variableExpense + totalFixedCosts;
+
+        // 4. TÍNH TOÁN LẠI SỐ DƯ CÒN LẠI (Sửa lỗi "chưa trừ" bằng cách tính lại ở client)
+        // Số dư còn lại = Dự kiến - Tổng chi tiêu thực tế
+        double remaining = budget.getSoTienDuKien() - totalExpenseActual;
+
+        // 5. Cập nhật UI
         tvTotalBudget.setText(df.format(budget.getSoTienDuKien()));
-        tvTotalExpense.setText(df.format(totalExpense));
-        tvBudgetRemainingHome.setText(df.format(remaining));
+        tvTotalExpense.setText(df.format(totalExpenseActual)); // Tổng chi phí bao gồm cả cố định
+        tvBudgetRemainingHome.setText(df.format(remaining)); // Số tiền còn lại đã được trừ đúng
 
         if (remaining < 0) {
             tvBudgetRemainingHome.setTextColor(getResources().getColor(android.R.color.holo_red_light));
@@ -149,8 +166,12 @@ public class HomeFragment extends Fragment {
             tvBudgetRemainingHome.setTextColor(getResources().getColor(android.R.color.white));
         }
 
-        updatePieChartData(budget, totalExpense);
+        // Cập nhật biểu đồ với Tổng Chi tiêu thực tế
+        updatePieChartData(budget, remaining, variableExpense, totalFixedCosts);
     }
+    // =======================================================
+    // =======================================================
+
 
     private void setupPieChart() {
         pieChart.setDrawEntryLabels(false);
@@ -160,10 +181,21 @@ public class HomeFragment extends Fragment {
         pieChart.animateY(1000);
     }
 
-    private void updatePieChartData(Fixedcosts budget, double totalExpense) {
+    // =======================================================
+    // ======== PHƯƠNG THỨC SỬA ĐỔI: updatePieChartData ========
+    // =======================================================
+    private void updatePieChartData(Fixedcosts budget, double remaining, double variableExpense, double totalFixedCosts) {
         List<PieEntry> entries = new ArrayList<>();
         List<Integer> colors = new ArrayList<>();
 
+        // 1. THÊM CHI PHÍ CỐ ĐỊNH (Theo yêu cầu)
+        if (totalFixedCosts > 0) {
+            entries.add(new PieEntry((float) totalFixedCosts, "Chi Phí Cố Định"));
+            colors.add(Color.parseColor("#FF9800")); // Màu cam
+        }
+
+        // 2. THÊM CHI TIÊU BIẾN ĐỔI THEO DANH MỤC
+        // Chi tiêu biến đổi là các khoản đã được ghi nhận trong CHI_TIEU
         List<ExpenseCategoryTotal> categoryTotals = expenseDAO.getCategoryTotalsByMonth(currentMonth);
 
         for (ExpenseCategoryTotal total : categoryTotals) {
@@ -173,14 +205,14 @@ public class HomeFragment extends Fragment {
             }
         }
 
-        double remaining = budget.getSoTienConLai();
-        double initialBudget = budget.getSoTienDuKien();
-
-        if (initialBudget > 0 && remaining > 0) {
+        // 3. THÊM SỐ TIỀN CÒN LẠI
+        // Chỉ thêm nếu Ngân sách Dự kiến > 0 và số dư còn lại > 0
+        if (budget.getSoTienDuKien() > 0 && remaining > 0) {
             entries.add(new PieEntry((float) remaining, "Còn lại"));
-            colors.add(Color.parseColor("#4CAF50"));
+            colors.add(Color.parseColor("#4CAF50")); // Màu xanh lá
         }
 
+        // Trường hợp không có giao dịch hoặc không có ngân sách
         if (entries.isEmpty()) {
             entries.add(new PieEntry(1f, "Chưa có giao dịch"));
             colors.add(Color.GRAY);
@@ -204,27 +236,19 @@ public class HomeFragment extends Fragment {
         pieChart.setData(pieData);
         pieChart.invalidate();
     }
+    // =======================================================
+    // =======================================================
 
     private int generateRandomColor() {
         Random rnd = new Random();
         return Color.argb(255, rnd.nextInt(200) + 55, rnd.nextInt(200) + 55, rnd.nextInt(200) + 55);
     }
 
-    // --- A. KIỂM TRA QUYỀN TRUY CẬP (Hiện tại chỉ gọi hàm tạo PDF) ---
     private void checkPermissionAndExport() {
-        // Nếu bạn muốn yêu cầu quyền trong tương lai:
-        // if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-        //     createPdfReport();
-        // } else {
-        //     requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        // }
-
-        // Hiện tại, gọi trực tiếp vì đường dẫn lưu file không cần quyền
         createPdfReport();
     }
 
 
-    // --- B. LOGIC TẠO VÀ GHI PDF (Sử dụng đường dẫn riêng của ứng dụng AN TOÀN) ---
     private void createPdfReport() {
 
         // 1. Thu thập dữ liệu
@@ -240,38 +264,33 @@ public class HomeFragment extends Fragment {
         int y = 50;
         int x = 50;
 
-        // 3. VẼ NỘI DUNG (Bạn có thể thêm logic vẽ của mình ở đây)
+        // 3. VẼ NỘI DUNG
         paint.setTextSize(20);
         paint.setFakeBoldText(true);
         canvas.drawText("BÁO CÁO CHI TIÊU THÁNG " + currentMonth, x, y, paint);
-        // ... (Tiếp tục logic vẽ) ...
+        // ... (Logic vẽ PDF) ...
 
         // 4. Hoàn tất và Ghi File
         document.finishPage(page);
 
         try {
-            // Lấy thư mục Documents riêng của ứng dụng
             File outputDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
 
             if (outputDir == null) {
-                Toast.makeText(requireContext(), "Lỗi: Không thể truy cập bộ nhớ ngoài.", Toast.LENGTH_LONG).show();
+                Toast.makeText(requireContext(), "Lỗi: Không thể truy cập bộ nhớ.", Toast.LENGTH_LONG).show();
                 return;
             }
 
-            // Tạo thư mục con 'Reports'
             File reportsFolder = new File(outputDir, "Reports");
             if (!reportsFolder.exists()) {
                 reportsFolder.mkdirs();
             }
 
-            // Tạo file trong thư mục riêng của ứng dụng
             String filename = "BaoCaoChiTieu_" + currentMonth + "_" + System.currentTimeMillis() + ".pdf";
             File file = new File(reportsFolder, filename);
 
-            // Ghi nội dung vào file
             document.writeTo(new FileOutputStream(file));
 
-            // Thông báo và đường dẫn lưu file
             Toast.makeText(requireContext(), "Đã xuất báo cáo thành công! Lưu tại: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show();
 
         } catch (IOException e) {

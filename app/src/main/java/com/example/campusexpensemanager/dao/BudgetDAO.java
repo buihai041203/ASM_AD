@@ -50,30 +50,57 @@ public class BudgetDAO {
         return budget;
     }
 
-    // Thêm bản ghi Ngân sách mới (Chỉ dùng nội bộ khi tháng mới bắt đầu)
-    private long createBudget(String thangNam, double soTien) {
+    public double getTotalFixedCosts() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        double total = 0;
+        // Lấy SUM của cột CD_SO_TIEN từ bảng CHI_PHI_CO_DINH
+        Cursor c = db.rawQuery("SELECT SUM(" + DatabaseHelper.CD_SO_TIEN + ") FROM " + DatabaseHelper.TABLE_CHI_PHI_CO_DINH, null);
+        if (c != null && c.moveToFirst()) {
+            total = c.getDouble(0);
+        }
+        if (c != null) c.close();
+        return total;
+    }
+    // Thêm bản ghi Ngân sách mới (Chỉ dùng nội bộ khi thá  ng mới bắt đầu)
+    private long createBudget(String thangNam, double soTienDuKien) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
+
+        double totalFixedCosts = getTotalFixedCosts(); // Lấy tổng CPCD
+        double soTienConLai = soTienDuKien - totalFixedCosts; // Trừ CPCD
+
         values.put(DatabaseHelper.NS_THANG_NAM, thangNam);
-        values.put(DatabaseHelper.NS_SO_TIEN_DU_KIEN, soTien);
-        values.put(DatabaseHelper.NS_SO_TIEN_CON_LAI, soTien);
-        return db.insert(DatabaseHelper.TABLE_NGAN_SACH, null, values);
+        values.put(DatabaseHelper.NS_SO_TIEN_DU_KIEN, soTienDuKien);
+        values.put(DatabaseHelper.NS_SO_TIEN_CON_LAI, soTienConLai);
+
+        long result = db.insert(DatabaseHelper.TABLE_NGAN_SACH, null, values);
+        db.close();
+        return result;
     }
 
     // 2. Cập nhật Ngân sách Dự kiến cho tháng
     public boolean updateBudget(String thangNam, double soTienDuKienMoi) {
-        // Cần tính toán số tiền đã chi để bảo toàn "số tiền còn lại"
+        // ... (Giữ nguyên phần lấy oldBudget) ...
         Fixedcosts oldBudget = getBudgetByMonth(thangNam);
         if (oldBudget == null) {
+            // Nếu không tồn tại, tạo mới và trừ CPCD
             return createBudget(thangNam, soTienDuKienMoi) != -1;
         }
 
-        // Lấy số tiền đã chi của tháng đó
-        double soTienDaChi = oldBudget.getSoTienDuKien() - oldBudget.getSoTienConLai();
+        // Tổng chi phí đã chi = (Dự kiến cũ - Còn lại cũ)
+        // Lưu ý: Số tiền này bao gồm cả chi phí cố định (vì nó đã bị trừ đi ở lần set trước) và chi phí biến đổi
+        double soTienDaChiTong = oldBudget.getSoTienDuKien() - oldBudget.getSoTienConLai();
 
-        // Số tiền còn lại mới = Dự kiến mới - Đã chi
-        double soTienConLaiMoi = soTienDuKienMoi - soTienDaChi;
+        // Lấy Tổng Chi Phí Cố Định MỚI (phòng trường hợp người dùng thêm/xóa CPCD sau khi set ngân sách)
+        double totalFixedCosts = getTotalFixedCosts();
 
+        // Tính Chi phí Biến đổi đã chi:
+        double soTienDaChiBienDoi = soTienDaChiTong - totalFixedCosts;
+
+        // Số tiền còn lại mới = Dự kiến mới - (Chi phí Cố định + Chi phí Biến đổi Đã chi)
+        double soTienConLaiMoi = soTienDuKienMoi - totalFixedCosts - soTienDaChiBienDoi;
+
+        // ... (Giữ nguyên phần UPDATE DB và đóng DB) ...
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.NS_SO_TIEN_DU_KIEN, soTienDuKienMoi);
@@ -81,6 +108,24 @@ public class BudgetDAO {
 
         int rows = db.update(DatabaseHelper.TABLE_NGAN_SACH, values,
                 DatabaseHelper.NS_THANG_NAM + " = ?", new String[]{thangNam});
+        db.close();
         return rows > 0;
+    }
+    public boolean adjustRemainingBudget(double adjustmentAmount) {
+        String currentMonth = new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(new Date());
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        try {
+            db.execSQL(
+                    "UPDATE " + DatabaseHelper.TABLE_NGAN_SACH +
+                            " SET " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " = " + DatabaseHelper.NS_SO_TIEN_CON_LAI + " + ?" +
+                            " WHERE " + DatabaseHelper.NS_THANG_NAM + " = ?",
+                    new Object[]{adjustmentAmount, currentMonth}
+            );
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+        // Không đóng DB ở đây! Việc đóng sẽ do ExpenseDAO đảm nhiệm sau khi kết thúc Transaction.
     }
 }

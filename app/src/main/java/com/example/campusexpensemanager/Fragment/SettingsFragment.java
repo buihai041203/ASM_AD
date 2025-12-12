@@ -18,7 +18,7 @@ import com.example.campusexpensemanager.R;
 import com.example.campusexpensemanager.dao.BudgetDAO;
 import com.example.campusexpensemanager.model.Fixedcosts;
 import com.example.campusexpensemanager.LoginActivity; // Sử dụng LoginActivity làm trang đích đăng xuất
-
+import com.example.campusexpensemanager.dao.ExpenseDAO;
 import java.text.DecimalFormat;
 
 public class SettingsFragment extends Fragment {
@@ -26,6 +26,7 @@ public class SettingsFragment extends Fragment {
     private TextView tvBudgetCurrent, tvBudgetRemaining;
     private Button btnSetBudget, btnLogout; // Đã khai báo btnLogout
     private BudgetDAO budgetDAO;
+    private ExpenseDAO expenseDAO;
     private DecimalFormat df = new DecimalFormat("#,### đ");
 
     @Override
@@ -35,6 +36,7 @@ public class SettingsFragment extends Fragment {
         // Khởi tạo DAO
         // Sử dụng requireContext() để đảm bảo Context hợp lệ
         budgetDAO = new BudgetDAO(requireContext());
+        expenseDAO = new ExpenseDAO(requireContext());
 
         // Ánh xạ các thành phần Ngân sách
         tvBudgetCurrent = view.findViewById(R.id.tvBudgetCurrent);
@@ -97,13 +99,29 @@ public class SettingsFragment extends Fragment {
         Fixedcosts currentBudget = budgetDAO.getOrCreateCurrentBudget();
 
         if (currentBudget != null) {
+            // Lấy tháng hiện tại
+            String currentMonth = budgetDAO.getOrCreateCurrentBudget().getThangNam();
+
+            // 1. Chi tiêu Biến đổi (thực tế đã chi từ bảng CHI_TIEU)
+            double variableExpense = expenseDAO.getTotalByMonth(currentMonth);
+
+            // 2. Chi phí Cố định (tổng các khoản phải chi)
+            double totalFixedCosts = budgetDAO.getTotalFixedCosts();
+
+            // 3. TÍNH TOÁN SỐ DƯ CÒN LẠI (Đồng bộ với HomeFragment)
+            // Số dư còn lại = Dự kiến - (CP Cố định + Chi tiêu Biến đổi)
+            double soTienConLaiTinhToan = currentBudget.getSoTienDuKien() - (variableExpense + totalFixedCosts);
+
+            // 4. Cập nhật UI
             String duKien = df.format(currentBudget.getSoTienDuKien());
-            String conLai = df.format(currentBudget.getSoTienConLai());
+            String conLai = df.format(soTienConLaiTinhToan);
 
             tvBudgetCurrent.setText("Ngân sách dự kiến: " + duKien);
 
             tvBudgetRemaining.setText("Số tiền còn lại: " + conLai);
-            if (currentBudget.getSoTienConLai() < 0) {
+
+            // Đổi màu sắc số dư còn lại
+            if (soTienConLaiTinhToan < 0) {
                 tvBudgetRemaining.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
             } else {
                 tvBudgetRemaining.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
