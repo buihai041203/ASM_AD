@@ -249,31 +249,132 @@ public class HomeFragment extends Fragment {
     }
 
 
+    // Trong HomeFragment.java
+
     private void createPdfReport() {
 
         // 1. Thu thập dữ liệu
         Fixedcosts budget = budgetDAO.getOrCreateCurrentBudget();
         List<ExpenseCategoryTotal> categoryTotals = expenseDAO.getCategoryTotalsByMonth(currentMonth);
 
+        // Tính tổng chi tiêu thực tế (Đã chi + Cố định)
+        double totalFixedCosts = budgetDAO.getTotalFixedCosts();
+        double variableExpense = expenseDAO.getTotalByMonth(currentMonth);
+        double totalExpenseActual = variableExpense + totalFixedCosts;
+        double remaining = budget.getSoTienDuKien() - totalExpenseActual;
+
         // 2. Chuẩn bị Tài liệu PDF
         PdfDocument document = new PdfDocument();
+        // Kích thước A4: 595pt x 842pt
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create();
         PdfDocument.Page page = document.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
         Paint paint = new Paint();
         int y = 50;
         int x = 50;
+        final int LINE_HEIGHT = 25;
+        final int HEADER_COLOR = Color.rgb(33, 150, 243); // Màu xanh dương
+        final int DETAIL_COLOR = Color.DKGRAY;
 
         // 3. VẼ NỘI DUNG
-        paint.setTextSize(20);
+
+        // --- TIÊU ĐỀ BÁO CÁO ---
+        paint.setTextSize(24);
         paint.setFakeBoldText(true);
+        paint.setColor(HEADER_COLOR);
         canvas.drawText("BÁO CÁO CHI TIÊU THÁNG " + currentMonth, x, y, paint);
-        // ... (Logic vẽ PDF) ...
+        y += LINE_HEIGHT * 2;
+
+        // --- TÓM TẮT NGÂN SÁCH ---
+        paint.setTextSize(18);
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.BLACK);
+        canvas.drawText("I. TÓM TẮT TÀI CHÍNH", x, y, paint);
+        y += LINE_HEIGHT;
+
+        // Dòng Ngân sách Dự kiến
+        paint.setTextSize(14);
+        paint.setFakeBoldText(false);
+        paint.setColor(DETAIL_COLOR);
+        canvas.drawText("• Ngân sách Dự kiến:", x + 20, y, paint);
+        canvas.drawText(df.format(budget.getSoTienDuKien()), 450, y, paint);
+        y += LINE_HEIGHT;
+
+        // Dòng Tổng Chi tiêu Thực tế
+        paint.setFakeBoldText(false);
+        canvas.drawText("• Tổng Chi tiêu Thực tế (Biến đổi + Cố định):", x + 20, y, paint);
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.RED);
+        canvas.drawText(df.format(totalExpenseActual), 450, y, paint);
+        y += LINE_HEIGHT;
+
+        // Dòng Số dư còn lại
+        paint.setFakeBoldText(false);
+        paint.setColor(DETAIL_COLOR);
+        canvas.drawText("• Số dư còn lại:", x + 20, y, paint);
+        paint.setFakeBoldText(true);
+        paint.setColor(remaining >= 0 ? Color.rgb(76, 175, 80) : Color.RED); // Xanh nếu dương, Đỏ nếu âm
+        canvas.drawText(df.format(remaining), 450, y, paint);
+        y += LINE_HEIGHT * 2;
+
+
+        // --- CHI TIẾT THEO DANH MỤC ---
+        paint.setTextSize(18);
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.BLACK);
+        canvas.drawText("II. CHI TIẾT CHI TIÊU", x, y, paint);
+        y += LINE_HEIGHT;
+
+        // A. Chi phí Cố định (Thường là khoản lớn)
+        paint.setTextSize(16);
+        paint.setFakeBoldText(true);
+        paint.setColor(Color.parseColor("#FF9800")); // Màu Cam
+        canvas.drawText("A. Chi phí Cố định:", x + 10, y, paint);
+        canvas.drawText(df.format(totalFixedCosts), 450, y, paint);
+        y += LINE_HEIGHT;
+
+        // B. Chi tiêu Biến đổi theo Danh mục
+        paint.setTextSize(16);
+        paint.setFakeBoldText(true);
+        paint.setColor(HEADER_COLOR);
+        canvas.drawText("B. Chi tiêu Biến đổi (Theo Danh mục):", x + 10, y, paint);
+        y += LINE_HEIGHT;
+
+        paint.setTextSize(14);
+        paint.setFakeBoldText(false);
+        paint.setColor(DETAIL_COLOR);
+
+        if (categoryTotals.isEmpty()) {
+            canvas.drawText("Không có chi tiêu biến đổi nào được ghi nhận.", x + 20, y, paint);
+            y += LINE_HEIGHT;
+        } else {
+            // Vẽ tiêu đề cột
+            paint.setFakeBoldText(true);
+            canvas.drawText("Danh mục", x + 20, y, paint);
+            canvas.drawText("Số tiền", 450, y, paint);
+            y += LINE_HEIGHT;
+            paint.setFakeBoldText(false);
+
+            // Vẽ từng danh mục
+            for (ExpenseCategoryTotal total : categoryTotals) {
+                if (y > pageInfo.getPageHeight() - 50) { // Kiểm tra tràn trang
+                    document.finishPage(page);
+                    page = document.startPage(pageInfo);
+                    canvas = page.getCanvas();
+                    y = 50; // Bắt đầu lại từ trên cùng
+                }
+                canvas.drawText("• " + total.getCategoryName(), x + 20, y, paint);
+                canvas.drawText(df.format(total.getTotalAmount()), 450, y, paint);
+                y += LINE_HEIGHT;
+            }
+        }
+
 
         // 4. Hoàn tất và Ghi File
         document.finishPage(page);
 
         try {
+            // ... (Logic ghi file cũ, không thay đổi) ...
             File outputDir = requireContext().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
 
             if (outputDir == null) {
