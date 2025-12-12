@@ -70,7 +70,13 @@ public class FixedcostsFragment extends Fragment {
         // Sự kiện thêm mới
         fabAdd.setOnClickListener(v -> showAddDialog());
 
-        // Sự kiện nhấn giữ để xóa (Tính năng tặng kèm cho tiện)
+        // --- TÍNH NĂNG MỚI: BẤM VÀO ITEM ĐỂ SỬA ---
+        lvFixedCosts.setOnItemClickListener((parent, view1, position, id) -> {
+            FixedCostItem selectedItem = listData.get(position);
+            showEditDialog(selectedItem); // Gọi hàm hiển thị Dialog sửa
+        });
+
+        // Sự kiện nhấn giữ để xóa
         lvFixedCosts.setOnItemLongClickListener((parent, view1, position, id) -> {
             showDeleteConfirm(listData.get(position));
             return true;
@@ -96,12 +102,11 @@ public class FixedcostsFragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
-    // Hiển thị hộp thoại nhập liệu
+    // Hiển thị hộp thoại THÊM MỚI
     private void showAddDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Thêm Chi Phí Cố Định");
 
-        // Tạo giao diện nhập liệu trong Dialog bằng code (đỡ phải tạo file xml mới)
         LinearLayout layout = new LinearLayout(getContext());
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 20, 50, 20);
@@ -132,6 +137,43 @@ public class FixedcostsFragment extends Fragment {
         builder.show();
     }
 
+    // --- TÍNH NĂNG MỚI: HIỂN THỊ HỘP THOẠI SỬA ---
+    private void showEditDialog(FixedCostItem item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Sửa Chi Phí");
+
+        LinearLayout layout = new LinearLayout(getContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 20);
+
+        final EditText edtName = new EditText(getContext());
+        edtName.setText(item.name); // Điền sẵn tên cũ
+        layout.addView(edtName);
+
+        final EditText edtAmount = new EditText(getContext());
+        edtAmount.setText(String.valueOf((long)item.amount)); // Điền sẵn tiền cũ (ép kiểu long để bỏ số .0 thừa)
+        edtAmount.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        layout.addView(edtAmount);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Cập nhật", (dialog, which) -> {
+            String name = edtName.getText().toString().trim();
+            String amountStr = edtAmount.getText().toString().trim();
+
+            if (!name.isEmpty() && !amountStr.isEmpty()) {
+                // Gọi hàm update xuống DB
+                updateFixedCost(item.id, name, Double.parseDouble(amountStr));
+            } else {
+                Toast.makeText(getContext(), "Không được để trống!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    // Hàm lưu mới (INSERT)
     private void saveFixedCost(String name, double amount) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -141,9 +183,27 @@ public class FixedcostsFragment extends Fragment {
         long result = db.insert(DatabaseHelper.TABLE_CHI_PHI_CO_DINH, null, values);
         if (result != -1) {
             Toast.makeText(getContext(), "Đã thêm!", Toast.LENGTH_SHORT).show();
-            loadFixedCosts(); // Load lại danh sách
+            loadFixedCosts();
         } else {
             Toast.makeText(getContext(), "Lỗi khi lưu!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // --- TÍNH NĂNG MỚI: HÀM CẬP NHẬT (UPDATE) ---
+    private void updateFixedCost(int id, String newName, double newAmount) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.CD_TEN, newName);
+        values.put(DatabaseHelper.CD_SO_TIEN, newAmount);
+
+        // Update bảng dựa theo ID
+        long result = db.update(DatabaseHelper.TABLE_CHI_PHI_CO_DINH, values, DatabaseHelper.CD_ID + "=?", new String[]{String.valueOf(id)});
+
+        if (result > 0) {
+            Toast.makeText(getContext(), "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
+            loadFixedCosts(); // Load lại danh sách ngay lập tức
+        } else {
+            Toast.makeText(getContext(), "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -161,7 +221,7 @@ public class FixedcostsFragment extends Fragment {
                 .show();
     }
 
-    // --- Adapter nội bộ để hiển thị danh sách ---
+    // --- Adapter nội bộ ---
     private class FixedCostAdapter extends ArrayAdapter<FixedCostItem> {
         public FixedCostAdapter(Context context, List<FixedCostItem> items) {
             super(context, 0, items);
@@ -171,9 +231,8 @@ public class FixedcostsFragment extends Fragment {
         @Override
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
             if (convertView == null) {
-                // Dùng layout có sẵn của Android (simple_list_item_2) để hiện 2 dòng
                 convertView = LayoutInflater.from(getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
-                convertView.setBackgroundColor(Color.WHITE); // Nền trắng
+                convertView.setBackgroundColor(Color.WHITE);
             }
 
             FixedCostItem item = getItem(position);
@@ -187,7 +246,7 @@ public class FixedcostsFragment extends Fragment {
 
                 DecimalFormat df = new DecimalFormat("#,###");
                 tvAmount.setText(df.format(item.amount) + " đ");
-                tvAmount.setTextColor(Color.parseColor("#009688")); // Màu xanh Teal
+                tvAmount.setTextColor(Color.parseColor("#009688"));
             }
             return convertView;
         }
