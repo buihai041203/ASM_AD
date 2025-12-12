@@ -161,7 +161,12 @@ public class EditExpenseFragment extends Fragment {
                 ContentValues values = new ContentValues();
                 values.put(DatabaseHelper.CT_SO_TIEN, newAmount);
                 values.put(DatabaseHelper.CT_GHI_CHU, finalNote);
-                values.put(DatabaseHelper.TABLE_LOAI_CHI_PHI, selectedCat.id);
+
+                // --- SỬA LỖI TẠI ĐÂY ---
+                // Thay TABLE_LOAI_CHI_PHI bằng CT_LOAI_ID
+                values.put(DatabaseHelper.CT_LOAI_ID, selectedCat.id);
+                // -----------------------
+
                 db.update(DatabaseHelper.TABLE_CHI_TIEU, values, DatabaseHelper.CT_ID + "=?", new String[]{String.valueOf(expenseId)});
 
                 // 3. Update Ngân Sách
